@@ -88,12 +88,12 @@ type Player interface {
 	informTrackLay(int, Track)         //inform this player that a player placed a track
 	informDestinationTicketPickup(int) //inform this player that a player picked up a destination card
 
-	askPickup([]Track, [NUMGAMECOLORS]int, int) GameColor //ask this player, given the gamestate, which card he wants to pick up
-	giveTrainCard(GameColor)                              //tell this player he has another card of given color
-	giveDestinationTicket(DestinationTicket)              //tell this player has a destination card
+	askPickup([]Track, []int, int) GameColor //ask this player, given the gamestate, which card he wants to pick up
+	giveTrainCard(GameColor)                 //tell this player he has another card of given color
+	giveDestinationTicket(DestinationTicket) //tell this player has a destination card
 
-	askTrackLay([]Track, [NUMGAMECOLORS]int) (int, GameColor, bool) //ask this player which track he wants to lay, and with what color, if he wants to lay one
-	askDestinationTicketPickup([]Track, [NUMGAMECOLORS]int) bool    //ask this player if he wants to pick up a destination card
+	askTrackLay([]Track, []int) (int, GameColor, bool) //ask this player which track he wants to lay, and with what color, if he wants to lay one
+	askDestinationTicketPickup([]Track, []int) bool    //ask this player if he wants to pick up a destination card
 
 	offerDestinationTickets([]DestinationTicket, int) []int //offer a list of destination cards and tell the player to take some of them
 }
@@ -103,18 +103,18 @@ type Engine struct {
 	numPlayers   int      // the number of Players
 	activePlayer int      // the current Player whose turn it is
 
-	trainCardHands         [][NUMGAMECOLORS]int  //the engine keeps track of who has what cards: TrainCard[i][j]=the ith player has how many of the j'th color of card
+	trainCardHands         [][]int               //the engine keeps track of who has what cards: TrainCard[i][j]=the ith player has how many of the j'th color of card
 	destinationTicketHands [][]DestinationTicket //which player has what destinationTickets: used for scoring purposes
 	numTrains              []int                 //how many trains the i'th player has left: the game will end when this is 0 for any player
 
-	trackList        []Track            //the main game board:an array of Tracks, each track is a single edge
-	faceUpTrainCards [NUMGAMECOLORS]int //the cards currently face up on the table, indexed by color
+	trackList        []Track //the main game board:an array of Tracks, each track is a single edge
+	faceUpTrainCards []int   //the cards currently face up on the table, indexed by color
 
 	pileOfTrainCards         []GameColor         //the facedown stack of train cards
 	pileOfDestinationTickets []DestinationTicket //the facedown stack of destination tickets
 }
 
-func (e *Engine) initializePileOfTrainCards(toExclude [NUMGAMECOLORS]int) {
+func (e *Engine) initializePileOfTrainCards(toExclude []int) {
 	e.pileOfTrainCards = nil //clear the pile
 
 	//put all the cards into the pile
@@ -139,7 +139,8 @@ func (e *Engine) initializePileOfTrainCards(toExclude [NUMGAMECOLORS]int) {
 func (e *Engine) drawTopTrainCard() GameColor {
 	if len(e.pileOfTrainCards) == 0 {
 		//let's figure out what we need to exclude
-		var toExclude [NUMGAMECOLORS]int
+		//var toExclude [NUMGAMECOLORS]int
+		toExclude := make([]int, NUMGAMECOLORS)
 		for j := 0; j < NUMGAMECOLORS; j++ {
 			//first, exclude cards that are face up on the table
 			toExclude[j] += e.faceUpTrainCards[j]
@@ -394,7 +395,6 @@ func (e *Engine) runSingleTurn() bool {
 }
 
 //TODO: separate out status (dynamic part of tracks) from trackList (static part of tracks)
-//TODO: use slices instead of arrays, so that nothing in engine is static/dependant on constants
 
 func main() {
 
