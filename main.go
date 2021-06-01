@@ -326,6 +326,10 @@ func (e *Engine) runSingleTurn() bool {
 	return false
 }
 
+//TODO: rewrite dev card collection to present a list
+//TODO: separate out status (dynamic part of tracks) from trackList (static part of tracks)
+//TODO: use slices instead of arrays, so that nothing in engine is static/dependant on constants
+
 func main() {
 
 }
