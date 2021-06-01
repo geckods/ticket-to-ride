@@ -148,7 +148,7 @@ func (e *Engine) drawTopTrainCard() GameColor {
 		for j := 0; j < e.gameConstants.NumGameColors; j++ {
 			//first, exclude cards that are face up on the table
 			toExclude[j] += e.faceUpTrainCards[j]
-			for i, _ := range e.playerList {
+			for i := range e.playerList {
 				//exclude cards that are in players' hands
 				toExclude[j] += e.trainCardHands[i][j]
 			}
@@ -250,7 +250,7 @@ func (e *Engine) initializeGame(playerList []Player) {
 	//	set up the pile of traincards (face up cards are initially all 0)
 	e.initializePileOfTrainCards(e.faceUpTrainCards)
 
-	for i, _ := range e.playerList {
+	for i := range e.playerList {
 		//give each player the initial train cards, don't announce card color
 		for j := 0; j < e.gameConstants.NumInitialTrainCardsDealt; j++ {
 			e.giveCardToPlayer(i, e.drawTopTrainCard(), true)
@@ -261,12 +261,12 @@ func (e *Engine) initializeGame(playerList []Player) {
 	e.initializeDestinationTicketPile()
 
 	//	give each player destination tickets
-	for i, _ := range e.playerList {
+	for i := range e.playerList {
 		//give each player the initial destination tickets
 		e.runDestinationTokenCollectionPhase(i, e.gameConstants.NumInitialDestinationTicketsOffered, e.gameConstants.NumInitialDestinationTicketsPicked, false)
 	}
 
-	for i, _ := range e.playerList {
+	for i := range e.playerList {
 		e.numTrains[i] = e.gameConstants.NumStartingTrains
 	}
 }
@@ -420,5 +420,6 @@ func (e *Engine) runSingleTurn() bool {
 }
 
 func main() {
-
+	myEngine := Engine{}
+	_ = myEngine
 }
