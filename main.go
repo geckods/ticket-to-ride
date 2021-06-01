@@ -399,17 +399,21 @@ func (e *Engine) runSingleTurn() bool {
 
 	//first, ask the guy whose turn it is to pick up cards
 	e.runCollectionPhase()
+	//then, ask them to put down some roads
 	if e.runTrackLayingPhase() {
 		//	The game is done
 		return true
 	}
+	//finally ask them to decide and pick some destination tokens
 	e.runDestinationTokenCollectionPhase(e.activePlayer, NUMDESTINATIONTICKETSOFFERED, NUMDESTINATIONTICKETSPICKED, true)
+	//next player
 	e.activePlayer++
 	e.activePlayer %= e.numPlayers
 	return false
 }
 
 //TODO: separate out status (dynamic part of tracks) from trackList (static part of tracks)
+//TODO: Remove all dependance on constants
 
 func main() {
 
