@@ -613,9 +613,12 @@ func main() {
 		NumDestinationTicketsPicked:         NUMDESTINATIONTICKETSPICKED,
 		LongestPathScore:                    LONGESTPATHSCORE,
 		NumPlayers:                          0,
+		NumTracks:                           0,
 		NumDestinations:                     NUMDESTINATIONS,
 		routeLengthScores:                   routeLengthScores,
 	}
 	_ = constants
+	e := Engine{}
+	_ = e
 
 }
