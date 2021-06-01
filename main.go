@@ -52,10 +52,11 @@ type Track struct {
 	d1, d2 Destination // two endpoints
 	c      GameColor   //what color
 	status int         //status represents whether it is unoccupied (-1) or occupied (which player number has it)
+	length int         // What is the length of the road
 }
 
 //TODO: build Track array
-var listOfTracks = []Track{{0, Atlanta, Atlanta, Red, -1}}
+var listOfTracks = []Track{{0, Atlanta, Atlanta, Red, -1, 3}}
 
 type Player interface {
 	initialize(myNumber, totPlayers int, constants GameConstants) //Tell the player what his number is and the total number of players, as well as the game settings
@@ -69,8 +70,8 @@ type Player interface {
 	giveTrainCard(GameColor)                              //tell this player he has another card of given color
 	giveDestinationTicket(DestinationTicket)              //tell this player has a destination card
 
-	askTrackLay([]Track, [NUMGAMECOLORS]int) (Track, bool)       //ask this player which track he wants to lay, if he wants to lay one
-	askDestinationTicketPickup([]Track, [NUMGAMECOLORS]int) bool //ask this player if he wants to pick up a destination card
+	askTrackLay([]Track, [NUMGAMECOLORS]int) (int, GameColor, bool) //ask this player which track he wants to lay, and with what color, if he wants to lay one
+	askDestinationTicketPickup([]Track, [NUMGAMECOLORS]int) bool    //ask this player if he wants to pick up a destination card
 }
 
 type Engine struct {
@@ -239,6 +240,90 @@ func (e *Engine) initializeGame(playerList []Player) {
 
 	e.trackList = listOfTracks
 
+}
+
+func (e *Engine) runCollectionPhase() {
+	whichColor := e.playerList[e.activePlayer].askPickup(e.trackList, e.faceUpTrainCards, 2)
+	if whichColor != Other {
+		//	he wants a faceup card
+		if e.faceUpTrainCards[whichColor] <= 0 {
+			//	he cannot pick that card
+			panic("The player picked a missing color")
+		}
+		e.giveCardToPlayer(e.activePlayer, whichColor, false)
+		e.faceUpTrainCards[whichColor]--
+		e.faceUpTrainCards[e.drawTopTrainCard()]++
+
+		if whichColor == Rainbow {
+			//	picking a rainbow color costs 2, so you're done
+			return
+		}
+	} else {
+		//	asking for a random card from the deck
+		e.giveCardToPlayer(e.activePlayer, e.drawTopTrainCard(), true)
+	}
+
+	whichColor = e.playerList[e.activePlayer].askPickup(e.trackList, e.faceUpTrainCards, 1)
+	if whichColor == Rainbow {
+		panic("The player picked a rainbow on his second turn")
+	}
+
+	if whichColor != Other {
+		//	he wants a faceup card
+		if e.faceUpTrainCards[whichColor] <= 0 {
+			//	he cannot pick that card
+			panic("The player picked a missing color")
+		}
+		e.giveCardToPlayer(e.activePlayer, whichColor, false)
+		e.faceUpTrainCards[whichColor]--
+		e.faceUpTrainCards[e.drawTopTrainCard()]++
+	} else {
+		//	asking for a random card from the deck
+		e.giveCardToPlayer(e.activePlayer, e.drawTopTrainCard(), true)
+	}
+}
+
+func (e *Engine) runTrackLayingPhase() bool {
+	whichTrack, whichColor, ok := e.playerList[e.activePlayer].askTrackLay(e.trackList, e.faceUpTrainCards)
+	if !ok {
+		return false
+	}
+	if e.trackList[whichTrack].status != -1 {
+		panic("The player tried to place over an occupied track")
+	}
+	if e.trackList[whichTrack].c != whichColor && e.trackList[whichTrack].c != Other {
+		panic("The player is trying to play with the wrong color for the track")
+	}
+	if e.trackList[whichTrack].length > e.numTrains[e.activePlayer] {
+		panic("The player does not have enough trains to play this move")
+	}
+	if e.trackList[whichTrack].length > e.trainCardHands[e.activePlayer][whichColor] {
+		panic("The player does not have color cards to play this move")
+	}
+
+	//	If we made it this far, I think we're good: do the move
+	//	mark the track as occupied
+	e.trackList[whichTrack].status = e.activePlayer
+	// remove the cards
+	e.trainCardHands[e.activePlayer][whichColor] -= e.trackList[whichTrack].length
+	//remove the trains
+	e.numTrains[e.activePlayer] -= e.trackList[whichTrack].length
+
+	return e.numTrains[e.activePlayer] == 0
+}
+
+func (e *Engine) runSingleTurn() bool {
+
+	//first, ask the guy whose turn it is to pick up cards
+	e.runCollectionPhase()
+	if e.runTrackLayingPhase() {
+		//	The game is done
+		return true
+	}
+
+	e.activePlayer++
+	e.activePlayer %= e.numPlayers
+	return false
 }
 
 func main() {
