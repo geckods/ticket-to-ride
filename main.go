@@ -1,5 +1,8 @@
 package main
 
+//Source for rules: https://ticket-to-ride.fandom.com/wiki/Ticket_to_Ride
+//Source for map: https://images-eu.ssl-images-amazon.com/images/I/B19d%2BVcYwWS.png
+
 import (
 	"math/rand"
 	"reflect"
