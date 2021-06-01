@@ -1,6 +1,6 @@
 package main
 
-//Source for rules: https://ticket-to-ride.fandom.com/wiki/Ticket_to_Ride
+//Source for rules: https://www.ultraboardgames.com/ticket-to-ride/game-rules.php
 //Source for map: https://images-eu.ssl-images-amazon.com/images/I/B19d%2BVcYwWS.png
 
 import (
@@ -90,12 +90,13 @@ type Player interface {
 	informTrackLay(int, Track)         //inform this player that a player placed a track
 	informDestinationTicketPickup(int) //inform this player that a player picked up a destination card
 
+	askMove([]int, []int) int //Ask the player what move he wants to do: 0 is pick up cards, 1 is place Tracks, 2 is pick destination ticket
+
 	askPickup([]int, []int, int) GameColor   //ask this player, given the gamestate, which card he wants to pick up
 	giveTrainCard(GameColor)                 //tell this player he has another card of given color
 	giveDestinationTicket(DestinationTicket) //tell this player has a destination card
 
-	askTrackLay([]int, []int) (int, GameColor, bool) //ask this player which track he wants to lay, and with what color, if he wants to lay one
-	askDestinationTicketPickup([]int, []int) bool    //ask this player if he wants to pick up a destination card
+	askTrackLay([]int, []int) (int, GameColor) //ask this player which track he wants to lay, and with what color
 
 	offerDestinationTickets([]DestinationTicket, int) []int //offer a list of destination cards and tell the player to take some of them
 }
@@ -263,7 +264,7 @@ func (e *Engine) initializeGame(playerList []Player) {
 	//	give each player destination tickets
 	for i := range e.playerList {
 		//give each player the initial destination tickets
-		e.runDestinationTokenCollectionPhase(i, e.gameConstants.NumInitialDestinationTicketsOffered, e.gameConstants.NumInitialDestinationTicketsPicked, false)
+		e.runDestinationTokenCollectionPhase(i, e.gameConstants.NumInitialDestinationTicketsOffered, e.gameConstants.NumInitialDestinationTicketsPicked)
 	}
 
 	for i := range e.playerList {
@@ -313,10 +314,7 @@ func (e *Engine) runCollectionPhase() {
 }
 
 func (e *Engine) runTrackLayingPhase() bool {
-	whichTrack, whichColor, ok := e.playerList[e.activePlayer].askTrackLay(e.trackStatus, e.faceUpTrainCards)
-	if !ok {
-		return false
-	}
+	whichTrack, whichColor := e.playerList[e.activePlayer].askTrackLay(e.trackStatus, e.faceUpTrainCards)
 	if e.trackStatus[whichTrack] != -1 {
 		panic("The player tried to place over an occupied track")
 	}
@@ -353,13 +351,7 @@ func (e *Engine) runTrackLayingPhase() bool {
 	return e.numTrains[e.activePlayer] == 0
 }
 
-func (e *Engine) runDestinationTokenCollectionPhase(playerNumber, numToOffer, numToAccept int, toAsk bool) {
-
-	if toAsk {
-		if e.playerList[playerNumber].askDestinationTicketPickup(e.trackStatus, e.faceUpTrainCards) == false {
-			return
-		}
-	}
+func (e *Engine) runDestinationTokenCollectionPhase(playerNumber, numToOffer, numToAccept int) {
 
 	//create a slice to offer
 	offerSlice := make([]DestinationTicket, 0)
@@ -404,15 +396,26 @@ func (e *Engine) putDestinationTicketBackInPile(ticket DestinationTicket) {
 
 func (e *Engine) runSingleTurn() bool {
 
-	//first, ask the guy whose turn it is to pick up cards
-	e.runCollectionPhase()
-	//then, ask them to put down some roads
-	if e.runTrackLayingPhase() {
-		//	The game is done
+	//end condition: since this turn is starting with a player with less than two trains, he must have reached here on the previous move
+	if e.numTrains[e.activePlayer] <= 2 {
 		return true
 	}
-	//finally ask them to decide and pick some destination tokens
-	e.runDestinationTokenCollectionPhase(e.activePlayer, e.gameConstants.NumDestinationTicketsOffered, e.gameConstants.NumDestinationTicketsPicked, true)
+
+	whichMove := e.playerList[e.activePlayer].askMove(e.trackStatus, e.faceUpTrainCards)
+	//first, ask the guy whose turn it is what he wants to d
+	if whichMove == 0 {
+		// let him pick up cards
+		e.runCollectionPhase()
+	} else if whichMove == 1 {
+		//ask them to put down some tracks
+		e.runTrackLayingPhase()
+	} else if whichMove == 2 {
+		//finally ask them to decide and pick some destination tokens
+		e.runDestinationTokenCollectionPhase(e.activePlayer, e.gameConstants.NumDestinationTicketsOffered, e.gameConstants.NumDestinationTicketsPicked)
+	} else {
+		panic("Invalid move choice")
+	}
+
 	//next player
 	e.activePlayer++
 	e.activePlayer %= e.gameConstants.NumPlayers
