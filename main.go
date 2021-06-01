@@ -76,27 +76,26 @@ type Track struct {
 	idx    int         //position in array
 	d1, d2 Destination // two endpoints
 	c      GameColor   //what color
-	status int         //status represents whether it is unoccupied (-1) or occupied (which player number has it)
 	length int         // What is the length of the road
 }
 
 //TODO: build Track array
-var listOfTracks = []Track{{0, Atlanta, Atlanta, Red, -1, 3}}
+var listOfTracks = []Track{{0, Atlanta, Atlanta, Red, 3}}
 
 type Player interface {
-	initialize(myNumber int, constants GameConstants) //Tell the player what his number is and the total number of players, as well as the game settings
+	initialize(myNumber int, trackList []Track, constants GameConstants) //Tell the player what his number is and the total number of players, as well as the game settings
 
 	//players are stateful, so we may need to inform them of game events (in case they want to keep track of other players' hands or something)
 	informCardPickup(int, GameColor)   //inform this player that a player picked up a card of given color
 	informTrackLay(int, Track)         //inform this player that a player placed a track
 	informDestinationTicketPickup(int) //inform this player that a player picked up a destination card
 
-	askPickup([]Track, []int, int) GameColor //ask this player, given the gamestate, which card he wants to pick up
+	askPickup([]int, []int, int) GameColor   //ask this player, given the gamestate, which card he wants to pick up
 	giveTrainCard(GameColor)                 //tell this player he has another card of given color
 	giveDestinationTicket(DestinationTicket) //tell this player has a destination card
 
-	askTrackLay([]Track, []int) (int, GameColor, bool) //ask this player which track he wants to lay, and with what color, if he wants to lay one
-	askDestinationTicketPickup([]Track, []int) bool    //ask this player if he wants to pick up a destination card
+	askTrackLay([]int, []int) (int, GameColor, bool) //ask this player which track he wants to lay, and with what color, if he wants to lay one
+	askDestinationTicketPickup([]int, []int) bool    //ask this player if he wants to pick up a destination card
 
 	offerDestinationTickets([]DestinationTicket, int) []int //offer a list of destination cards and tell the player to take some of them
 }
@@ -110,6 +109,7 @@ type Engine struct {
 	numTrains              []int                 //how many trains the i'th player has left: the game will end when this is 0 for any player
 
 	trackList        []Track //the main game board:an array of Tracks, each track is a single edge
+	trackStatus      []int   //stores the current status of each track: which player owns it, or -1 for unoccupied
 	faceUpTrainCards []int   //the cards currently face up on the table, indexed by color
 
 	pileOfTrainCards         []GameColor         //the facedown stack of train cards
@@ -236,8 +236,14 @@ func (e *Engine) initializeGame(playerList []Player) {
 		NumPlayers:                          len(playerList),
 	}
 
+	e.trackList = listOfTracks
+	e.trackStatus = make([]int, len(e.trackList))
+	for i := range e.trackStatus {
+		e.trackStatus[i] = -1
+	}
+
 	for i, p := range e.playerList {
-		p.initialize(i, e.gameConstants)
+		p.initialize(i, e.trackList, e.gameConstants)
 		//	initialize each player
 	}
 
@@ -263,13 +269,10 @@ func (e *Engine) initializeGame(playerList []Player) {
 	for i, _ := range e.playerList {
 		e.numTrains[i] = e.gameConstants.NumStartingTrains
 	}
-
-	e.trackList = listOfTracks
-
 }
 
 func (e *Engine) runCollectionPhase() {
-	whichColor := e.playerList[e.activePlayer].askPickup(e.trackList, e.faceUpTrainCards, 2)
+	whichColor := e.playerList[e.activePlayer].askPickup(e.trackStatus, e.faceUpTrainCards, 2)
 	if whichColor != Other {
 		//	he wants a faceup card
 		if e.faceUpTrainCards[whichColor] <= 0 {
@@ -289,7 +292,7 @@ func (e *Engine) runCollectionPhase() {
 		e.giveCardToPlayer(e.activePlayer, e.drawTopTrainCard(), true)
 	}
 
-	whichColor = e.playerList[e.activePlayer].askPickup(e.trackList, e.faceUpTrainCards, 1)
+	whichColor = e.playerList[e.activePlayer].askPickup(e.trackStatus, e.faceUpTrainCards, 1)
 	if whichColor == Rainbow {
 		panic("The player picked a rainbow on his second turn")
 	}
@@ -310,11 +313,11 @@ func (e *Engine) runCollectionPhase() {
 }
 
 func (e *Engine) runTrackLayingPhase() bool {
-	whichTrack, whichColor, ok := e.playerList[e.activePlayer].askTrackLay(e.trackList, e.faceUpTrainCards)
+	whichTrack, whichColor, ok := e.playerList[e.activePlayer].askTrackLay(e.trackStatus, e.faceUpTrainCards)
 	if !ok {
 		return false
 	}
-	if e.trackList[whichTrack].status != -1 {
+	if e.trackStatus[whichTrack] != -1 {
 		panic("The player tried to place over an occupied track")
 	}
 	if whichColor == Rainbow {
@@ -333,7 +336,7 @@ func (e *Engine) runTrackLayingPhase() bool {
 	//	If we made it this far, I think we're good: do the move
 
 	//	mark the track as occupied
-	e.trackList[whichTrack].status = e.activePlayer
+	e.trackStatus[whichTrack] = e.activePlayer
 
 	// remove the cards
 	if e.trainCardHands[e.activePlayer][whichColor] >= e.trackList[whichTrack].length {
@@ -353,7 +356,7 @@ func (e *Engine) runTrackLayingPhase() bool {
 func (e *Engine) runDestinationTokenCollectionPhase(playerNumber, numToOffer, numToAccept int, toAsk bool) {
 
 	if toAsk {
-		if e.playerList[playerNumber].askDestinationTicketPickup(e.trackList, e.faceUpTrainCards) == false {
+		if e.playerList[playerNumber].askDestinationTicketPickup(e.trackStatus, e.faceUpTrainCards) == false {
 			return
 		}
 	}
@@ -415,8 +418,6 @@ func (e *Engine) runSingleTurn() bool {
 	e.activePlayer %= e.gameConstants.NumPlayers
 	return false
 }
-
-//TODO: separate out status (dynamic part of tracks) from trackList (static part of tracks)
 
 func main() {
 
