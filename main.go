@@ -54,6 +54,9 @@ type Track struct {
 	status int         //status represents whether it is unoccupied (-1) or occupied (which player number has it)
 }
 
+//TODO: build Track array
+var listOfTracks = []Track{{0, Atlanta, Atlanta, Red, -1}}
+
 type Player interface {
 	initialize(myNumber, totPlayers int, constants GameConstants) //Tell the player what his number is and the total number of players, as well as the game settings
 
@@ -233,6 +236,8 @@ func (e *Engine) initializeGame(playerList []Player) {
 	for i, _ := range e.playerList {
 		e.numTrains[i] = NUMSTARTINGTRAINS
 	}
+
+	e.trackList = listOfTracks
 
 }
 
