@@ -81,8 +81,8 @@ type Engine struct {
 
 	trackList        []Track            //the main game board:an array of Tracks, each track is a single edge
 	faceUpTrainCards [NUMGAMECOLORS]int //the cards currently face up on the table, indexed by color
-	pileOfTrainCards []GameColor        //the facedown stack of train cards
 
+	pileOfTrainCards         []GameColor         //the facedown stack of train cards
 	pileOfDestinationTickets []DestinationTicket //the facedown stack of destination tickets
 }
 
@@ -213,6 +213,10 @@ func (e *Engine) initializeGame(playerList []Player) {
 			}
 			e.giveDestinationTicketToPlayer(i, ticket)
 		}
+	}
+
+	for i, _ := range e.playerList {
+		e.numTrains[i] = NUMSTARTINGTRAINS
 	}
 
 }
