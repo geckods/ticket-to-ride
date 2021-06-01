@@ -8,6 +8,7 @@ import (
 	"reflect"
 )
 
+const NUMDESTINATIONS = 36
 const NUMCOLORCARDS = 12
 const NUMRAINBOWCARDS = 14
 const NUMSTARTINGTRAINS = 48
@@ -54,8 +55,8 @@ type DestinationTicket struct {
 }
 
 type GameConstants struct {
-	NumColorCards, NumRainbowCards, NumStartingTrains, NumFaceUpTrainCards, NumGameColors, NumInitialTrainCardsDealt, NumInitialDestinationTicketsOffered, NumInitialDestinationTicketsPicked, NumDestinationTicketsOffered, NumDestinationTicketsPicked, NumPlayers, LongestPathScore int
-	routeLengthScores                                                                                                                                                                                                                                                                  []int
+	NumDestinations, NumColorCards, NumRainbowCards, NumStartingTrains, NumFaceUpTrainCards, NumGameColors, NumInitialTrainCardsDealt, NumInitialDestinationTicketsOffered, NumInitialDestinationTicketsPicked, NumDestinationTicketsOffered, NumDestinationTicketsPicked, NumPlayers, LongestPathScore int
+	routeLengthScores                                                                                                                                                                                                                                                                                   []int
 }
 
 const (
@@ -121,6 +122,8 @@ type Engine struct {
 	pileOfDestinationTickets []DestinationTicket //the facedown stack of destination tickets
 
 	gameConstants GameConstants
+
+	adjacencyList [][]int
 }
 
 func (e *Engine) initializePileOfTrainCards(toExclude []int) {
@@ -223,6 +226,19 @@ func (e *Engine) drawTopDestinationTicket() (DestinationTicket, bool) {
 	return element, true
 }
 
+func (e *Engine) populateAdjacencyList() {
+	e.adjacencyList = make([][]int, e.gameConstants.NumDestinations)
+	for i := 0; i < e.gameConstants.NumDestinations; i++ {
+		e.adjacencyList[i] = make([]int, 0)
+	}
+
+	for i, edge := range e.trackList {
+		e.adjacencyList[edge.d1] = append(e.adjacencyList[edge.d1], i)
+		e.adjacencyList[edge.d2] = append(e.adjacencyList[edge.d2], i)
+	}
+
+}
+
 func (e *Engine) initializeGame(playerList []Player, constants GameConstants) {
 	e.playerList = playerList
 	e.activePlayer = 0
@@ -234,6 +250,14 @@ func (e *Engine) initializeGame(playerList []Player, constants GameConstants) {
 	e.trackStatus = make([]int, len(e.trackList))
 	for i := range e.trackStatus {
 		e.trackStatus[i] = -1
+	}
+
+	//populate adjacency List
+	e.populateAdjacencyList()
+
+	//set numTrains
+	for i := range e.playerList {
+		e.numTrains[i] = e.gameConstants.NumStartingTrains
 	}
 
 	for i, p := range e.playerList {
@@ -260,9 +284,6 @@ func (e *Engine) initializeGame(playerList []Player, constants GameConstants) {
 		e.runDestinationTokenCollectionPhase(i, e.gameConstants.NumInitialDestinationTicketsOffered, e.gameConstants.NumInitialDestinationTicketsPicked)
 	}
 
-	for i := range e.playerList {
-		e.numTrains[i] = e.gameConstants.NumStartingTrains
-	}
 }
 
 func (e *Engine) runCollectionPhase() {
@@ -437,9 +458,42 @@ func (e *Engine) determinePlayerScore(playerNumber int) int {
 	return score
 }
 
-func (e *Engine) isConnected(d1, d2 Destination, playerNumber int) bool {
-	//	TODO: fill
+func (e *Engine) dfs(src, dst Destination, playerNumber int, seen []bool) bool {
+
+	if src == dst {
+		return true
+	}
+
+	seen[src] = true
+
+	var otherDestination Destination
+
+	for _, edgeIndex := range e.adjacencyList[src] {
+		if e.trackStatus[edgeIndex] != playerNumber {
+			continue
+		}
+
+		if src == e.trackList[edgeIndex].d1 {
+			otherDestination = e.trackList[edgeIndex].d2
+		} else {
+			otherDestination = e.trackList[edgeIndex].d1
+		}
+
+		if seen[otherDestination] {
+			continue
+		}
+
+		if e.dfs(otherDestination, dst, playerNumber, seen) {
+			return true
+		}
+	}
 	return false
+}
+
+func (e *Engine) isConnected(d1, d2 Destination, playerNumber int) bool {
+	seen := make([]bool, e.gameConstants.NumDestinations)
+
+	return e.dfs(d1, d2, playerNumber, seen)
 }
 
 func (e *Engine) getLongestPathPlayers() []int {
@@ -498,6 +552,7 @@ func main() {
 		NumDestinationTicketsPicked:         NUMDESTINATIONTICKETSPICKED,
 		LongestPathScore:                    LONGESTPATHSCORE,
 		NumPlayers:                          0,
+		NumDestinations:                     NUMDESTINATIONS,
 		routeLengthScores:                   routeLengthScores,
 	}
 	_ = constants
