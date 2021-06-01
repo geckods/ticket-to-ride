@@ -1,6 +1,9 @@
 package main
 
-import "math/rand"
+import (
+	"math/rand"
+	"reflect"
+)
 
 const NUMCOLORCARDS = 12
 const NUMRAINBOWCARDS = 14
@@ -8,7 +11,26 @@ const NUMSTARTINGTRAINS = 48
 const NUMFACEUPTRAINCARDS = 5
 const NUMGAMECOLORS = 9
 const NUMINITIALTRAINCARDSDEALT = 4
-const NUMINITIALDESTINATIONTICKETSDEALT = 3
+const NUMINITIALDESTINATIONTICKETSOFFERED = 3
+const NUMINITIALDESTINATIONTICKETSPICKED = 2
+const NUMDESTINATIONTICKETSOFFERED = 3
+const NUMDESTINATIONTICKETSPICKED = 1
+
+func itemExists(arrayType interface{}, item interface{}) bool {
+	arr := reflect.ValueOf(arrayType)
+
+	if arr.Kind() != reflect.Array {
+		panic("Invalid data-type")
+	}
+
+	for i := 0; i < arr.Len(); i++ {
+		if arr.Index(i).Interface() == item {
+			return true
+		}
+	}
+
+	return false
+}
 
 type Destination int
 type GameColor int
@@ -72,6 +94,8 @@ type Player interface {
 
 	askTrackLay([]Track, [NUMGAMECOLORS]int) (int, GameColor, bool) //ask this player which track he wants to lay, and with what color, if he wants to lay one
 	askDestinationTicketPickup([]Track, [NUMGAMECOLORS]int) bool    //ask this player if he wants to pick up a destination card
+
+	offerDestinationTickets([]DestinationTicket, int) []int //offer a list of destination cards and tell the player to take some of them
 }
 
 type Engine struct {
@@ -201,7 +225,7 @@ func (e *Engine) initializeGame(playerList []Player) {
 		NumFaceUpTrainCards:               NUMFACEUPTRAINCARDS,
 		NumGameColors:                     NUMGAMECOLORS,
 		NumInitialTrainCardsDealt:         NUMINITIALTRAINCARDSDEALT,
-		NumInitialDestinationTicketsDealt: NUMINITIALDESTINATIONTICKETSDEALT,
+		NumInitialDestinationTicketsDealt: NUMINITIALDESTINATIONTICKETSOFFERED,
 	}
 
 	for i, p := range e.playerList {
@@ -225,13 +249,7 @@ func (e *Engine) initializeGame(playerList []Player) {
 	//	give each player destination tickets
 	for i, _ := range e.playerList {
 		//give each player the initial destination tickets
-		for j := 0; j < NUMINITIALDESTINATIONTICKETSDEALT; j++ {
-			ticket, ok := e.drawTopDestinationTicket()
-			if !ok {
-				panic("Not Enough Destination Tickets To Deal This Many To Each Player")
-			}
-			e.giveDestinationTicketToPlayer(i, ticket)
-		}
+		e.runDestinationTokenCollectionPhase(i, NUMINITIALDESTINATIONTICKETSOFFERED, NUMINITIALDESTINATIONTICKETSPICKED, false)
 	}
 
 	for i, _ := range e.playerList {
@@ -312,6 +330,55 @@ func (e *Engine) runTrackLayingPhase() bool {
 	return e.numTrains[e.activePlayer] == 0
 }
 
+func (e *Engine) runDestinationTokenCollectionPhase(playerNumber, numToOffer, numToAccept int, toAsk bool) {
+
+	if toAsk {
+		if e.playerList[playerNumber].askDestinationTicketPickup(e.trackList, e.faceUpTrainCards) == false {
+			return
+		}
+	}
+
+	//create a slice to offer
+	offerSlice := make([]DestinationTicket, 0)
+
+	for j := 0; j < numToOffer; j++ {
+		ticket, ok := e.drawTopDestinationTicket()
+		if !ok {
+			panic("Not Enough Destination Tickets To Deal This Many To Each Player")
+		}
+		offerSlice = append(offerSlice, ticket)
+	}
+
+	//	offer the slice
+	acceptedList := e.playerList[playerNumber].offerDestinationTickets(offerSlice, numToAccept)
+	if len(acceptedList) < numToAccept {
+		panic("The player didn't pick enough destination tickets")
+	}
+
+	alreadySeenAccepted := make([]int, 0) //used to prevent skirting the rules by printing duplicates
+
+	for _, accepted := range acceptedList {
+		if accepted < 0 || accepted >= len(offerSlice) || itemExists(alreadySeenAccepted, accepted) {
+			panic("The player gave invalid indices in selecting destination tickets")
+		}
+		alreadySeenAccepted = append(alreadySeenAccepted, accepted)
+	}
+
+	for i, offered := range offerSlice {
+		if itemExists(acceptedList, i) {
+			//this is one of the destination cards he wants to pick
+			e.giveDestinationTicketToPlayer(playerNumber, offered)
+		} else {
+			//this is one of the ones he wants to not pick
+			e.putDestinationTicketBackInPile(offered)
+		}
+	}
+}
+
+func (e *Engine) putDestinationTicketBackInPile(ticket DestinationTicket) {
+	e.pileOfDestinationTickets = append([]DestinationTicket{ticket}, e.pileOfDestinationTickets...)
+}
+
 func (e *Engine) runSingleTurn() bool {
 
 	//first, ask the guy whose turn it is to pick up cards
@@ -320,13 +387,12 @@ func (e *Engine) runSingleTurn() bool {
 		//	The game is done
 		return true
 	}
-
+	e.runDestinationTokenCollectionPhase(e.activePlayer, NUMDESTINATIONTICKETSOFFERED, NUMDESTINATIONTICKETSPICKED, true)
 	e.activePlayer++
 	e.activePlayer %= e.numPlayers
 	return false
 }
 
-//TODO: rewrite dev card collection to present a list
 //TODO: separate out status (dynamic part of tracks) from trackList (static part of tracks)
 //TODO: use slices instead of arrays, so that nothing in engine is static/dependant on constants
 
