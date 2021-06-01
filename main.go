@@ -1,5 +1,7 @@
 package main
 
+import "math/rand"
+
 const NUMCOLORCARDS = 12
 const NUMRAINBOWCARDS = 14
 const NUMSTARTINGTRAINS = 48
@@ -82,4 +84,139 @@ type Engine struct {
 	pileOfTrainCards []GameColor        //the facedown stack of train cards
 
 	pileOfDestinationTickets []DestinationTicket //the facedown stack of destination tickets
+}
+
+func (e *Engine) initializePileOfTrainCards(toExclude [NUMGAMECOLORS]int) {
+	e.pileOfTrainCards = nil //clear the pile
+
+	//put all the cards into the pile
+	for _, c := range listOfGameColors {
+		if c == Rainbow {
+			for i := 0; i < NUMRAINBOWCARDS-toExclude[c]; i++ {
+				e.pileOfTrainCards = append(e.pileOfTrainCards, c)
+			}
+		} else {
+			for i := 0; i < NUMCOLORCARDS-toExclude[c]; i++ {
+				e.pileOfTrainCards = append(e.pileOfTrainCards, c)
+			}
+		}
+	}
+
+	//shuffle the deck
+	rand.Shuffle(len(e.pileOfTrainCards), func(i, j int) {
+		e.pileOfTrainCards[i], e.pileOfTrainCards[j] = e.pileOfTrainCards[j], e.pileOfTrainCards[i]
+	})
+}
+
+func (e *Engine) drawTopTrainCard() GameColor {
+	if len(e.pileOfTrainCards) == 0 {
+		e.initializePileOfTrainCards(e.faceUpTrainCards)
+	}
+
+	index := len(e.pileOfTrainCards) - 1              // Get the index of the top most element.
+	element := (e.pileOfTrainCards)[index]            // Index into the slice and obtain the element.
+	e.pileOfTrainCards = (e.pileOfTrainCards)[:index] // Remove it from the stack by slicing it off.
+
+	return element
+}
+
+func (e *Engine) giveCardToPlayer(p int, c GameColor, toHideColorWhenInforming bool) {
+	//update the engine's copy
+	e.trainCardHands[p][c]++
+	//give the player his card
+	e.playerList[p].giveTrainCard(c)
+
+	//tell everybody else what happened
+	for _, pl := range e.playerList {
+		if toHideColorWhenInforming {
+			pl.informCardPickup(p, Other)
+		} else {
+			pl.informCardPickup(p, c)
+		}
+	}
+}
+
+func (e *Engine) giveDestinationTicketToPlayer(p int, ticket DestinationTicket) {
+	//update the engine's copy
+	e.destinationTicketHands[p] = append(e.destinationTicketHands[p], ticket)
+	//give the player his card
+	e.playerList[p].giveDestinationTicket(ticket)
+	//tell everybody else what happened
+	for _, pl := range e.playerList {
+		pl.informDestinationTicketPickup(p)
+	}
+}
+
+func (e *Engine) initializeDestinationTicketPile() {
+	//assign
+	e.pileOfDestinationTickets = listOfDestinationTickets
+
+	//	shuffle
+	rand.Shuffle(len(e.pileOfDestinationTickets), func(i, j int) {
+		e.pileOfDestinationTickets[i], e.pileOfDestinationTickets[j] = e.pileOfDestinationTickets[j], e.pileOfDestinationTickets[i]
+	})
+
+}
+
+func (e *Engine) drawTopDestinationTicket() (DestinationTicket, bool) {
+	if len(e.pileOfDestinationTickets) == 0 {
+		return DestinationTicket{}, false
+	}
+
+	index := len(e.pileOfDestinationTickets) - 1                      // Get the index of the top most element.
+	element := (e.pileOfDestinationTickets)[index]                    // Index into the slice and obtain the element.
+	e.pileOfDestinationTickets = (e.pileOfDestinationTickets)[:index] // Remove it from the stack by slicing it off.
+
+	return element, true
+}
+
+func (e *Engine) initializeGame(playerList []Player) {
+	e.playerList = playerList
+	e.activePlayer = 0
+	e.numPlayers = len(playerList)
+
+	gameconstants := GameConstants{
+		NumColorCards:                     NUMCOLORCARDS,
+		NumRainbowCards:                   NUMRAINBOWCARDS,
+		NumStartingTrains:                 NUMSTARTINGTRAINS,
+		NumFaceUpTrainCards:               NUMFACEUPTRAINCARDS,
+		NumGameColors:                     NUMGAMECOLORS,
+		NumInitialTrainCardsDealt:         NUMINITIALTRAINCARDSDEALT,
+		NumInitialDestinationTicketsDealt: NUMINITIALDESTINATIONTICKETSDEALT,
+	}
+
+	for i, p := range e.playerList {
+		p.initialize(i, e.numPlayers, gameconstants)
+		//	initialize each player
+	}
+
+	//	set up the pile of traincards (face up cards are initially all 0)
+	e.initializePileOfTrainCards(e.faceUpTrainCards)
+
+	for i, _ := range e.playerList {
+		//give each player the initial train cards, don't announce card color
+		for j := 0; j < NUMINITIALTRAINCARDSDEALT; j++ {
+			e.giveCardToPlayer(i, e.drawTopTrainCard(), true)
+		}
+	}
+
+	//	set up the pile of destination tickets
+	e.initializeDestinationTicketPile()
+
+	//	give each player destination tickets
+	for i, _ := range e.playerList {
+		//give each player the initial destination tickets
+		for j := 0; j < NUMINITIALDESTINATIONTICKETSDEALT; j++ {
+			ticket, ok := e.drawTopDestinationTicket()
+			if !ok {
+				panic("Not Enough Destination Tickets To Deal This Many To Each Player")
+			}
+			e.giveDestinationTicketToPlayer(i, ticket)
+		}
+	}
+
+}
+
+func main() {
+
 }
