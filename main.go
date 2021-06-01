@@ -310,21 +310,33 @@ func (e *Engine) runTrackLayingPhase() bool {
 	if e.trackList[whichTrack].status != -1 {
 		panic("The player tried to place over an occupied track")
 	}
+	if whichColor == Rainbow {
+		panic("The player is trying to play rainbow: if you want to use only rainbows, select any other color by default, like red")
+	}
 	if e.trackList[whichTrack].c != whichColor && e.trackList[whichTrack].c != Other {
 		panic("The player is trying to play with the wrong color for the track")
 	}
 	if e.trackList[whichTrack].length > e.numTrains[e.activePlayer] {
 		panic("The player does not have enough trains to play this move")
 	}
-	if e.trackList[whichTrack].length > e.trainCardHands[e.activePlayer][whichColor] {
+	if e.trackList[whichTrack].length > e.trainCardHands[e.activePlayer][whichColor]+e.trainCardHands[e.activePlayer][Rainbow] {
 		panic("The player does not have color cards to play this move")
 	}
 
 	//	If we made it this far, I think we're good: do the move
+
 	//	mark the track as occupied
 	e.trackList[whichTrack].status = e.activePlayer
+
 	// remove the cards
-	e.trainCardHands[e.activePlayer][whichColor] -= e.trackList[whichTrack].length
+	if e.trainCardHands[e.activePlayer][whichColor] >= e.trackList[whichTrack].length {
+		e.trainCardHands[e.activePlayer][whichColor] -= e.trackList[whichTrack].length
+	} else {
+		//	gotta use up them rainbows
+		e.trainCardHands[e.activePlayer][Rainbow] -= e.trackList[whichTrack].length - e.trainCardHands[e.activePlayer][whichColor]
+		e.trainCardHands[e.activePlayer][whichColor] = 0
+	}
+
 	//remove the trains
 	e.numTrains[e.activePlayer] -= e.trackList[whichTrack].length
 
