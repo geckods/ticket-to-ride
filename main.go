@@ -110,7 +110,22 @@ func (e *Engine) initializePileOfTrainCards(toExclude [NUMGAMECOLORS]int) {
 
 func (e *Engine) drawTopTrainCard() GameColor {
 	if len(e.pileOfTrainCards) == 0 {
-		e.initializePileOfTrainCards(e.faceUpTrainCards)
+		//let's figure out what we need to exclude
+		var toExclude [NUMGAMECOLORS]int
+		for j := 0; j < NUMGAMECOLORS; j++ {
+			//first, exclude cards that are face up on the table
+			toExclude[j] += e.faceUpTrainCards[j]
+			for i, _ := range e.playerList {
+				//exclude cards that are in players' hands
+				toExclude[j] += e.trainCardHands[i][j]
+			}
+		}
+
+		e.initializePileOfTrainCards(toExclude)
+		if len(e.pileOfTrainCards) == 0 {
+			//	if it's still zero, then all cards are in players' hands, we cannot draw any more
+			panic("Not Enough Cards in The Deck")
+		}
 	}
 
 	index := len(e.pileOfTrainCards) - 1              // Get the index of the top most element.
