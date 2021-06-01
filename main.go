@@ -55,8 +55,8 @@ type DestinationTicket struct {
 }
 
 type GameConstants struct {
-	NumDestinations, NumColorCards, NumRainbowCards, NumStartingTrains, NumFaceUpTrainCards, NumGameColors, NumInitialTrainCardsDealt, NumInitialDestinationTicketsOffered, NumInitialDestinationTicketsPicked, NumDestinationTicketsOffered, NumDestinationTicketsPicked, NumPlayers, LongestPathScore int
-	routeLengthScores                                                                                                                                                                                                                                                                                   []int
+	NumDestinations, NumTracks, NumColorCards, NumRainbowCards, NumStartingTrains, NumFaceUpTrainCards, NumGameColors, NumInitialTrainCardsDealt, NumInitialDestinationTicketsOffered, NumInitialDestinationTicketsPicked, NumDestinationTicketsOffered, NumDestinationTicketsPicked, NumPlayers, LongestPathScore int
+	routeLengthScores                                                                                                                                                                                                                                                                                              []int
 }
 
 const (
@@ -247,6 +247,7 @@ func (e *Engine) initializeGame(playerList []Player, constants GameConstants) {
 	e.gameConstants.NumPlayers = len(e.playerList)
 
 	e.trackList = listOfTracks
+	e.gameConstants.NumTracks = len(e.trackList)
 	e.trackStatus = make([]int, len(e.trackList))
 	for i := range e.trackStatus {
 		e.trackStatus[i] = -1
@@ -473,11 +474,7 @@ func (e *Engine) dfs(src, dst Destination, playerNumber int, seen []bool) bool {
 			continue
 		}
 
-		if src == e.trackList[edgeIndex].d1 {
-			otherDestination = e.trackList[edgeIndex].d2
-		} else {
-			otherDestination = e.trackList[edgeIndex].d1
-		}
+		otherDestination = e.getOtherDestination(src, e.trackList[edgeIndex])
 
 		if seen[otherDestination] {
 			continue
@@ -496,9 +493,73 @@ func (e *Engine) isConnected(d1, d2 Destination, playerNumber int) bool {
 	return e.dfs(d1, d2, playerNumber, seen)
 }
 
+func (e *Engine) getOtherDestination(d Destination, t Track) Destination {
+	if d == t.d1 {
+		return t.d2
+	} else if d == t.d2 {
+		return t.d1
+	} else {
+		panic("This isn't the right edge")
+	}
+}
+
+func (e *Engine) computeLongestPathRecursive(x Destination, currLen int, adjList [][]int, seenEdge []bool, toUpdate *int) {
+	if currLen > (*toUpdate) {
+		*toUpdate = currLen
+	}
+
+	for _, edgeIndex := range adjList[x] {
+		if !seenEdge[edgeIndex] {
+			seenEdge[edgeIndex] = true
+			e.computeLongestPathRecursive(e.getOtherDestination(x, e.trackList[edgeIndex]), currLen+e.trackList[edgeIndex].length, adjList, seenEdge, toUpdate)
+			seenEdge[edgeIndex] = false
+		}
+	}
+}
+
+func (e *Engine) determineLongestPathForPlayer(playerNumber int) int {
+	//	There are two ways I thought of doing this and I'm not sure which is better
+	//	Way #1: iterate over all subsets of edges, and see if you can get a set of edges which induces a subgraph which is connected and eulerean
+	//	The check for eulerean is simple, the check for connectedness is dfs
+	//	Way #2: from all starting points, repeatedly try all edges, update ans=max(ans,currPathLen)
+	//	 I'm not even sure if way #2 is correct
+
+	//	First, create a playerAdjList, which selects from adjList only those which belong to the player
+	playerAdjList := make([][]int, e.gameConstants.NumDestinations)
+	for i, adj := range e.adjacencyList {
+		for _, edge := range adj {
+			if e.trackStatus[edge] == playerNumber {
+				playerAdjList[i] = append(playerAdjList[i], edge)
+			}
+		}
+	}
+
+	seenEdge := make([]bool, e.gameConstants.NumTracks)
+
+	ans := 0
+	//	now, from each starting point, run the recursive computer
+	for i := 0; i < e.gameConstants.NumDestinations; i++ {
+		e.computeLongestPathRecursive(Destination(i), 0, playerAdjList, seenEdge, &ans)
+	}
+
+	return ans
+}
+
 func (e *Engine) getLongestPathPlayers() []int {
-	//	TODO: fill
-	return make([]int, 0)
+	longestPathers := make([]int, 0)
+	currLongestPathLength := 0
+
+	for i := range e.playerList {
+		sc := e.determineLongestPathForPlayer(i)
+		if sc > currLongestPathLength {
+			currLongestPathLength = sc
+			longestPathers = nil
+			longestPathers = append(longestPathers, i)
+		} else if sc == currLongestPathLength {
+			longestPathers = append(longestPathers, i)
+		}
+	}
+	return longestPathers
 }
 
 func (e *Engine) determineWinners() []int {
