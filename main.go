@@ -51,7 +51,7 @@ type DestinationTicket struct {
 }
 
 type GameConstants struct {
-	NumColorCards, NumRainbowCards, NumStartingTrains, NumFaceUpTrainCards, NumGameColors, NumInitialTrainCardsDealt, NumInitialDestinationTicketsDealt int
+	NumColorCards, NumRainbowCards, NumStartingTrains, NumFaceUpTrainCards, NumGameColors, NumInitialTrainCardsDealt, NumInitialDestinationTicketsOffered, NumInitialDestinationTicketsPicked, NumDestinationTicketsOffered, NumDestinationTicketsPicked, NumPlayers int
 }
 
 const (
@@ -84,7 +84,7 @@ type Track struct {
 var listOfTracks = []Track{{0, Atlanta, Atlanta, Red, -1, 3}}
 
 type Player interface {
-	initialize(myNumber, totPlayers int, constants GameConstants) //Tell the player what his number is and the total number of players, as well as the game settings
+	initialize(myNumber int, constants GameConstants) //Tell the player what his number is and the total number of players, as well as the game settings
 
 	//players are stateful, so we may need to inform them of game events (in case they want to keep track of other players' hands or something)
 	informCardPickup(int, GameColor)   //inform this player that a player picked up a card of given color
@@ -103,7 +103,6 @@ type Player interface {
 
 type Engine struct {
 	playerList   []Player // a list of Player objects, used to simulate the game
-	numPlayers   int      // the number of Players
 	activePlayer int      // the current Player whose turn it is
 
 	trainCardHands         [][]int               //the engine keeps track of who has what cards: TrainCard[i][j]=the ith player has how many of the j'th color of card
@@ -115,6 +114,8 @@ type Engine struct {
 
 	pileOfTrainCards         []GameColor         //the facedown stack of train cards
 	pileOfDestinationTickets []DestinationTicket //the facedown stack of destination tickets
+
+	gameConstants GameConstants
 }
 
 func (e *Engine) initializePileOfTrainCards(toExclude []int) {
@@ -123,11 +124,11 @@ func (e *Engine) initializePileOfTrainCards(toExclude []int) {
 	//put all the cards into the pile
 	for _, c := range listOfGameColors {
 		if c == Rainbow {
-			for i := 0; i < NUMRAINBOWCARDS-toExclude[c]; i++ {
+			for i := 0; i < e.gameConstants.NumRainbowCards-toExclude[c]; i++ {
 				e.pileOfTrainCards = append(e.pileOfTrainCards, c)
 			}
 		} else {
-			for i := 0; i < NUMCOLORCARDS-toExclude[c]; i++ {
+			for i := 0; i < e.gameConstants.NumColorCards-toExclude[c]; i++ {
 				e.pileOfTrainCards = append(e.pileOfTrainCards, c)
 			}
 		}
@@ -142,9 +143,9 @@ func (e *Engine) initializePileOfTrainCards(toExclude []int) {
 func (e *Engine) drawTopTrainCard() GameColor {
 	if len(e.pileOfTrainCards) == 0 {
 		//let's figure out what we need to exclude
-		//var toExclude [NUMGAMECOLORS]int
-		toExclude := make([]int, NUMGAMECOLORS)
-		for j := 0; j < NUMGAMECOLORS; j++ {
+
+		toExclude := make([]int, e.gameConstants.NumGameColors)
+		for j := 0; j < e.gameConstants.NumGameColors; j++ {
 			//first, exclude cards that are face up on the table
 			toExclude[j] += e.faceUpTrainCards[j]
 			for i, _ := range e.playerList {
@@ -220,20 +221,23 @@ func (e *Engine) drawTopDestinationTicket() (DestinationTicket, bool) {
 func (e *Engine) initializeGame(playerList []Player) {
 	e.playerList = playerList
 	e.activePlayer = 0
-	e.numPlayers = len(playerList)
 
-	gameconstants := GameConstants{
-		NumColorCards:                     NUMCOLORCARDS,
-		NumRainbowCards:                   NUMRAINBOWCARDS,
-		NumStartingTrains:                 NUMSTARTINGTRAINS,
-		NumFaceUpTrainCards:               NUMFACEUPTRAINCARDS,
-		NumGameColors:                     NUMGAMECOLORS,
-		NumInitialTrainCardsDealt:         NUMINITIALTRAINCARDSDEALT,
-		NumInitialDestinationTicketsDealt: NUMINITIALDESTINATIONTICKETSOFFERED,
+	e.gameConstants = GameConstants{
+		NumColorCards:                       NUMCOLORCARDS,
+		NumRainbowCards:                     NUMRAINBOWCARDS,
+		NumStartingTrains:                   NUMSTARTINGTRAINS,
+		NumFaceUpTrainCards:                 NUMFACEUPTRAINCARDS,
+		NumGameColors:                       NUMGAMECOLORS,
+		NumInitialTrainCardsDealt:           NUMINITIALTRAINCARDSDEALT,
+		NumInitialDestinationTicketsOffered: NUMINITIALDESTINATIONTICKETSOFFERED,
+		NumInitialDestinationTicketsPicked:  NUMINITIALDESTINATIONTICKETSPICKED,
+		NumDestinationTicketsOffered:        NUMDESTINATIONTICKETSOFFERED,
+		NumDestinationTicketsPicked:         NUMDESTINATIONTICKETSPICKED,
+		NumPlayers:                          len(playerList),
 	}
 
 	for i, p := range e.playerList {
-		p.initialize(i, e.numPlayers, gameconstants)
+		p.initialize(i, e.gameConstants)
 		//	initialize each player
 	}
 
@@ -242,7 +246,7 @@ func (e *Engine) initializeGame(playerList []Player) {
 
 	for i, _ := range e.playerList {
 		//give each player the initial train cards, don't announce card color
-		for j := 0; j < NUMINITIALTRAINCARDSDEALT; j++ {
+		for j := 0; j < e.gameConstants.NumInitialTrainCardsDealt; j++ {
 			e.giveCardToPlayer(i, e.drawTopTrainCard(), true)
 		}
 	}
@@ -253,11 +257,11 @@ func (e *Engine) initializeGame(playerList []Player) {
 	//	give each player destination tickets
 	for i, _ := range e.playerList {
 		//give each player the initial destination tickets
-		e.runDestinationTokenCollectionPhase(i, NUMINITIALDESTINATIONTICKETSOFFERED, NUMINITIALDESTINATIONTICKETSPICKED, false)
+		e.runDestinationTokenCollectionPhase(i, e.gameConstants.NumInitialDestinationTicketsOffered, e.gameConstants.NumInitialDestinationTicketsPicked, false)
 	}
 
 	for i, _ := range e.playerList {
-		e.numTrains[i] = NUMSTARTINGTRAINS
+		e.numTrains[i] = e.gameConstants.NumStartingTrains
 	}
 
 	e.trackList = listOfTracks
@@ -405,15 +409,14 @@ func (e *Engine) runSingleTurn() bool {
 		return true
 	}
 	//finally ask them to decide and pick some destination tokens
-	e.runDestinationTokenCollectionPhase(e.activePlayer, NUMDESTINATIONTICKETSOFFERED, NUMDESTINATIONTICKETSPICKED, true)
+	e.runDestinationTokenCollectionPhase(e.activePlayer, e.gameConstants.NumDestinationTicketsOffered, e.gameConstants.NumDestinationTicketsPicked, true)
 	//next player
 	e.activePlayer++
-	e.activePlayer %= e.numPlayers
+	e.activePlayer %= e.gameConstants.NumPlayers
 	return false
 }
 
 //TODO: separate out status (dynamic part of tracks) from trackList (static part of tracks)
-//TODO: Remove all dependance on constants
 
 func main() {
 
