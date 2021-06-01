@@ -18,6 +18,9 @@ const NUMINITIALDESTINATIONTICKETSOFFERED = 3
 const NUMINITIALDESTINATIONTICKETSPICKED = 2
 const NUMDESTINATIONTICKETSOFFERED = 3
 const NUMDESTINATIONTICKETSPICKED = 1
+const LONGESTPATHSCORE = 10
+
+var routeLengthScores = []int{0, 1, 2, 4, 7, 10, 15, 21}
 
 func itemExists(arrayType interface{}, item interface{}) bool {
 	arr := reflect.ValueOf(arrayType)
@@ -51,7 +54,8 @@ type DestinationTicket struct {
 }
 
 type GameConstants struct {
-	NumColorCards, NumRainbowCards, NumStartingTrains, NumFaceUpTrainCards, NumGameColors, NumInitialTrainCardsDealt, NumInitialDestinationTicketsOffered, NumInitialDestinationTicketsPicked, NumDestinationTicketsOffered, NumDestinationTicketsPicked, NumPlayers int
+	NumColorCards, NumRainbowCards, NumStartingTrains, NumFaceUpTrainCards, NumGameColors, NumInitialTrainCardsDealt, NumInitialDestinationTicketsOffered, NumInitialDestinationTicketsPicked, NumDestinationTicketsOffered, NumDestinationTicketsPicked, NumPlayers, LongestPathScore int
+	routeLengthScores                                                                                                                                                                                                                                                                  []int
 }
 
 const (
@@ -219,23 +223,12 @@ func (e *Engine) drawTopDestinationTicket() (DestinationTicket, bool) {
 	return element, true
 }
 
-func (e *Engine) initializeGame(playerList []Player) {
+func (e *Engine) initializeGame(playerList []Player, constants GameConstants) {
 	e.playerList = playerList
 	e.activePlayer = 0
 
-	e.gameConstants = GameConstants{
-		NumColorCards:                       NUMCOLORCARDS,
-		NumRainbowCards:                     NUMRAINBOWCARDS,
-		NumStartingTrains:                   NUMSTARTINGTRAINS,
-		NumFaceUpTrainCards:                 NUMFACEUPTRAINCARDS,
-		NumGameColors:                       NUMGAMECOLORS,
-		NumInitialTrainCardsDealt:           NUMINITIALTRAINCARDSDEALT,
-		NumInitialDestinationTicketsOffered: NUMINITIALDESTINATIONTICKETSOFFERED,
-		NumInitialDestinationTicketsPicked:  NUMINITIALDESTINATIONTICKETSPICKED,
-		NumDestinationTicketsOffered:        NUMDESTINATIONTICKETSOFFERED,
-		NumDestinationTicketsPicked:         NUMDESTINATIONTICKETSPICKED,
-		NumPlayers:                          len(playerList),
-	}
+	e.gameConstants = constants
+	e.gameConstants.NumPlayers = len(e.playerList)
 
 	e.trackList = listOfTracks
 	e.trackStatus = make([]int, len(e.trackList))
@@ -422,7 +415,91 @@ func (e *Engine) runSingleTurn() bool {
 	return false
 }
 
+func (e *Engine) determinePlayerScore(playerNumber int) int {
+	score := 0
+
+	// add all the scores for paths
+	for i, status := range e.trackStatus {
+		if status == playerNumber {
+			score += e.gameConstants.routeLengthScores[e.trackList[i].length]
+		}
+	}
+
+	//	add or subtract the score for each destination ticket
+	for _, ticket := range e.destinationTicketHands[playerNumber] {
+		if e.isConnected(ticket.d1, ticket.d2, playerNumber) {
+			score += ticket.points
+		} else {
+			score -= ticket.points
+		}
+	}
+
+	return score
+}
+
+func (e *Engine) isConnected(d1, d2 Destination, playerNumber int) bool {
+	//	TODO: fill
+	return false
+}
+
+func (e *Engine) getLongestPathPlayers() []int {
+	//	TODO: fill
+	return make([]int, 0)
+}
+
+func (e *Engine) determineWinners() []int {
+	winners := make([]int, 0)
+	currBestScore := 0
+
+	//figure out which player(s) have longest paths
+	longestPathPlayers := e.getLongestPathPlayers()
+
+	for i := range e.playerList {
+		sc := e.determinePlayerScore(i)
+		if itemExists(longestPathPlayers, i) {
+			sc += e.gameConstants.LongestPathScore
+		}
+		if sc > currBestScore {
+			currBestScore = sc
+			winners = nil
+			winners = append(winners, i)
+		} else if sc == currBestScore {
+			winners = append(winners, i)
+		}
+	}
+	return winners
+}
+
+func (e *Engine) runGame(playerList []Player, constants GameConstants) []int {
+	//initialize
+	e.initializeGame(playerList, constants)
+
+	gameOver := false
+	//run turns until the game is over
+	for !gameOver {
+		gameOver = e.runSingleTurn()
+	}
+
+	//determine the Winner
+	return e.determineWinners()
+}
+
 func main() {
-	myEngine := Engine{}
-	_ = myEngine
+	constants := GameConstants{
+		NumColorCards:                       NUMCOLORCARDS,
+		NumRainbowCards:                     NUMRAINBOWCARDS,
+		NumStartingTrains:                   NUMSTARTINGTRAINS,
+		NumFaceUpTrainCards:                 NUMFACEUPTRAINCARDS,
+		NumGameColors:                       NUMGAMECOLORS,
+		NumInitialTrainCardsDealt:           NUMINITIALTRAINCARDSDEALT,
+		NumInitialDestinationTicketsOffered: NUMINITIALDESTINATIONTICKETSOFFERED,
+		NumInitialDestinationTicketsPicked:  NUMINITIALDESTINATIONTICKETSPICKED,
+		NumDestinationTicketsOffered:        NUMDESTINATIONTICKETSOFFERED,
+		NumDestinationTicketsPicked:         NUMDESTINATIONTICKETSPICKED,
+		LongestPathScore:                    LONGESTPATHSCORE,
+		NumPlayers:                          0,
+		routeLengthScores:                   routeLengthScores,
+	}
+	_ = constants
+
 }
