@@ -167,9 +167,13 @@ func (e *Engine) initializeGame(playerList []Player, constants GameConstants) {
 	e.populateAdjacencyList()
 
 	//set numTrains
+	e.numTrains = make([]int, len(e.playerList))
 	for i := range e.playerList {
 		e.numTrains[i] = e.gameConstants.NumStartingTrains
 	}
+
+	//ADDING RETURN FOR DEBUGGING PURPOSES
+	return
 
 	for i, p := range e.playerList {
 		p.initialize(i, e.trackList, e.gameConstants)
@@ -527,8 +531,29 @@ func (e *Engine) writeGraphToFile(filename string) {
 }
 
 func (e *Engine) getGraphVizString() string {
-	graphString := "Graph G {\n\t"
+
+	//for graphviz testing purposes
+	//for i:=0;i<10;i++ {
+	//	e.trackStatus[i]=1
+	//}
+	//for i:=10;i<20;i++ {
+	//	e.trackStatus[i]=2
+	//}
+	graphString := "Graph G {\n"
+	graphString += "\toverlap=true\n"
+	graphString += "\tmode=KK\n"
+
+	for dest,pos := range mapPositions {
+		graphString += "\t"
+		graphString += dest
+		graphString += " [ pos=\""
+		graphString += pos
+		graphString += "!\" ];"
+		graphString += "\n"
+	}
+
 	for i, track := range e.trackList {
+		graphString += "\t"
 		graphString += e.destinationNames[track.d1]
 		graphString += " -- "
 		graphString += e.destinationNames[track.d2]
@@ -550,7 +575,16 @@ func (e *Engine) getGraphVizString() string {
 				graphString += e.stringColors[e.trackStatus[i]]
 			}
 		}
-		graphString += "]\n"
+
+		_,ok1 := mapPositions[e.destinationNames[track.d1]]
+		_,ok2 := mapPositions[e.destinationNames[track.d2]]
+
+		if ok1||ok2 {
+			graphString += ", weight=1"
+		} else {
+			graphString += ", weight=1"
+		}
+		graphString += "];\n"
 	}
 	graphString += "}"
 	return graphString
