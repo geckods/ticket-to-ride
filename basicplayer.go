@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type BasicPlayer struct {
 	trackList []Track //my copy of the board
 	trackStatus []int //my copy of the status of each track
@@ -16,6 +18,10 @@ func (b* BasicPlayer) initialize(myNumber int, trackList []Track, constants Game
 	b.myNumber = myNumber
 	b.trackList = trackList
 	b.constants = constants
+	b.myTrains = constants.NumStartingTrains
+
+	b.myTrainCards = make([]int, b.constants.NumGameColors)
+	b.myDestinationTickets=make([]DestinationTicket,0)
 }
 
 func (b* BasicPlayer) informStatus(trackStatus []int, faceUpCards []int) {
@@ -40,6 +46,7 @@ func (b* BasicPlayer) whichTrackCanILay() (int, GameColor) {
 		if b.trackStatus[i]!=-1 || b.myTrains<track.length {
 			continue
 		}
+		fmt.Println("Found eligible track")
 		if track.c==Other {
 			for _, allcolor:=range listOfGameColors{
 				if allcolor!=Rainbow {
@@ -54,10 +61,10 @@ func (b* BasicPlayer) whichTrackCanILay() (int, GameColor) {
 			}
 		}
 	}
+	fmt.Println("Did not find track to be laid")
 	return -1, Other
 }
-func (b* BasicPlayer) askTrackLay(trackStatus []int, faceUpCards []int) (int, GameColor){
-	b.trackStatus = trackStatus
+func (b* BasicPlayer) askTrackLay() (int, GameColor){
 	trackIndex, trackColor:=b.whichTrackCanILay()
 	if trackIndex==-1{
 		panic("whichTrackCanILay in error, panic, panic, panic")
@@ -74,7 +81,7 @@ func (b* BasicPlayer) askTrackLay(trackStatus []int, faceUpCards []int) (int, Ga
 
 } //ask this player which track he wants to lay, and with what color
 
-func (b* BasicPlayer) askMove(trackStatus []int,faceUpCards []int) int{
+func (b* BasicPlayer) askMove() int{
 	whichTrack,_ := b.whichTrackCanILay()
 	if whichTrack!=-1 {
 		return 1
@@ -84,7 +91,7 @@ func (b* BasicPlayer) askMove(trackStatus []int,faceUpCards []int) int{
 
 } //Ask the player what move he wants to do: 0 is pick up cards, 1 is place Tracks, 2 is pick destination ticket
 
-func (b* BasicPlayer) askPickup(trackStatus []int, faceUpCards[]int, howManyLeft int) GameColor {
+func (b* BasicPlayer) askPickup(howManyLeft int) GameColor {
 	return Other
 }   //ask this player, given the gamestate, which card he wants to pick up
 
