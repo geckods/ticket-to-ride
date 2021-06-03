@@ -3,6 +3,7 @@ package main
 type BasicPlayer struct {
 	trackList []Track //my copy of the board
 	trackStatus []int //my copy of the status of each track
+	faceUpCards []int
 
 	myTrainCards []int //number of each color card I have
 	myDestinationTickets []DestinationTicket //list of destination ticket I have
@@ -17,6 +18,11 @@ func (b* BasicPlayer) initialize(myNumber int, trackList []Track, constants Game
 	b.constants = constants
 }
 
+func (b* BasicPlayer) informStatus(trackStatus []int, faceUpCards []int) {
+ 	b.faceUpCards=faceUpCards
+ 	b.trackStatus=trackStatus
+
+}
 func (b* BasicPlayer) informCardPickup(int, GameColor) {
 	//	do nothing
 }
@@ -29,18 +35,74 @@ func (b* BasicPlayer) informDestinationTicketPickup(int) {
 	//	do nothing
 }
 
-func (b* BasicPlayer) whichTrackCanILay() {
-	for i,track := b.trackList {
-		if
+func (b* BasicPlayer) whichTrackCanILay() (int, GameColor) {
+	for i,track := range b.trackList { //rainbow
+		if b.trackStatus[i]!=-1 || b.myTrains<track.length {
+			continue
+		}
+		if track.c==Other {
+			for _, allcolor:=range listOfGameColors{
+				if allcolor!=Rainbow {
+					if track.length <= b.myTrainCards[allcolor]+b.myTrainCards[Rainbow]{
+						return i, allcolor
+					}
+				}
+			}
+		} else {
+			if b.myTrainCards[track.c] + b.myTrainCards[Rainbow] >= track.length {
+				return i, track.c
+			}
+		}
 	}
+	return -1, Other
 }
+func (b* BasicPlayer) askTrackLay(trackStatus []int, faceUpCards []int) (int, GameColor){
+	b.trackStatus = trackStatus
+	trackIndex, trackColor:=b.whichTrackCanILay()
+	if trackIndex==-1{
+		panic("whichTrackCanILay in error, panic, panic, panic")
+	}
+	if b.trackList[trackIndex].length>b.myTrainCards[trackColor]{
+		b.myTrainCards[Rainbow]-= b.trackList[trackIndex].length-b.myTrainCards[trackColor]
+		b.myTrainCards[trackColor]=0
+	} else{
+		b.myTrainCards[trackColor]-=b.trackList[trackIndex].length
+	}
+	b.myTrains-=b.trackList[trackIndex].length
+	return trackIndex, trackColor
 
-askMove([]int, []int) int //Ask the player what move he wants to do: 0 is pick up cards, 1 is place Tracks, 2 is pick destination ticket
 
-askPickup([]int, []int, int) GameColor   //ask this player, given the gamestate, which card he wants to pick up
-giveTrainCard(GameColor)                 //tell this player he has another card of given color
-giveDestinationTicket(DestinationTicket) //tell this player has a destination card
+} //ask this player which track he wants to lay, and with what color
 
-askTrackLay([]int, []int) (int, GameColor) //ask this player which track he wants to lay, and with what color
+func (b* BasicPlayer) askMove(trackStatus []int,faceUpCards []int) int{
+	whichTrack,_ := b.whichTrackCanILay()
+	if whichTrack!=-1 {
+		return 1
+	} else {
+		return 0
+	}
 
-offerDestinationTickets([]DestinationTicket, int) []int //offer a list of destination cards and tell the player to take some of them
+} //Ask the player what move he wants to do: 0 is pick up cards, 1 is place Tracks, 2 is pick destination ticket
+
+func (b* BasicPlayer) askPickup(trackStatus []int, faceUpCards[]int, howManyLeft int) GameColor {
+	return Other
+}   //ask this player, given the gamestate, which card he wants to pick up
+
+
+func (b* BasicPlayer) giveTrainCard(card GameColor) {
+	b.myTrainCards[card]++
+}                 //tell this player he has another card of given color
+
+func (b* BasicPlayer) giveDestinationTicket(d DestinationTicket) {
+	//	basic player doesn't care about destination tickets, so do nothing
+} //tell this player has a destination card
+
+
+func (b* BasicPlayer) offerDestinationTickets(dtlist []DestinationTicket,howmany int) []int {
+	//basic player doesn't care about destination tickets, so just pick the first bunch of tickets
+	ret := make([]int,0)
+	for i:=0;i<howmany;i++ {
+		ret=append(ret,i)
+	}
+	return ret
+}//offer a list of destination cards and tell the player to take some of them
