@@ -8,13 +8,13 @@ type Player interface {
 	informTrackLay(int, Track)         //inform this player that a player placed a track
 	informDestinationTicketPickup(int) //inform this player that a player picked up a destination card
 
-	askMove([]int, []int) int //Ask the player what move he wants to do: 0 is pick up cards, 1 is place Tracks, 2 is pick destination ticket
+	informStatus([]int, []int) //called to inform the playstate before their turn
 
-	askPickup([]int, []int, int) GameColor   //ask this player, given the gamestate, which card he wants to pick up
+	askMove() int //Ask the player what move he wants to do: 0 is pick up cards, 1 is place Tracks, 2 is pick destination ticket
+	askPickup(int) GameColor   //ask this player, given the gamestate, which card he wants to pick up
+	askTrackLay() (int, GameColor) //ask this player which track he wants to lay, and with what color
+
 	giveTrainCard(GameColor)                 //tell this player he has another card of given color
 	giveDestinationTicket(DestinationTicket) //tell this player has a destination card
-
-	askTrackLay([]int, []int) (int, GameColor) //ask this player which track he wants to lay, and with what color
-
 	offerDestinationTickets([]DestinationTicket, int) []int //offer a list of destination cards and tell the player to take some of them
 }

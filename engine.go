@@ -202,7 +202,7 @@ func (e *Engine) initializeGame(playerList []Player, constants GameConstants) {
 }
 
 func (e *Engine) runCollectionPhase() {
-	whichColor := e.playerList[e.activePlayer].askPickup(e.trackStatus, e.faceUpTrainCards, 2)
+	whichColor := e.playerList[e.activePlayer].askPickup(2)
 	if whichColor != Other {
 		//	he wants a faceup card
 		if e.faceUpTrainCards[whichColor] <= 0 {
@@ -222,7 +222,7 @@ func (e *Engine) runCollectionPhase() {
 		e.giveCardToPlayer(e.activePlayer, e.drawTopTrainCard(), true)
 	}
 
-	whichColor = e.playerList[e.activePlayer].askPickup(e.trackStatus, e.faceUpTrainCards, 1)
+	whichColor = e.playerList[e.activePlayer].askPickup(1)
 	if whichColor == Rainbow {
 		panic("The player picked a rainbow on his second turn")
 	}
@@ -243,7 +243,7 @@ func (e *Engine) runCollectionPhase() {
 }
 
 func (e *Engine) runTrackLayingPhase() bool {
-	whichTrack, whichColor := e.playerList[e.activePlayer].askTrackLay(e.trackStatus, e.faceUpTrainCards)
+	whichTrack, whichColor := e.playerList[e.activePlayer].askTrackLay()
 	if e.trackStatus[whichTrack] != -1 {
 		panic("The player tried to place over an occupied track")
 	}
@@ -330,7 +330,10 @@ func (e *Engine) runSingleTurn() bool {
 		return true
 	}
 
-	whichMove := e.playerList[e.activePlayer].askMove(e.trackStatus, e.faceUpTrainCards)
+	//first, inform the player of the game state
+	e.playerList[e.activePlayer].informStatus(e.trackStatus, e.faceUpTrainCards)
+
+	whichMove := e.playerList[e.activePlayer].askMove()
 	//first, ask the guy whose turn it is what he wants to d
 	if whichMove == 0 {
 		// let him pick up cards
