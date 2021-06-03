@@ -144,8 +144,14 @@ func (e *Engine) populateAdjacencyList() {
 }
 
 func (e *Engine) initializeGame(playerList []Player, constants GameConstants) {
+
+	//TODO: some of these things refer to global variables, ideally we don't want that, everything can be a parameter
+
 	e.playerList = playerList
 	e.activePlayer = 0
+
+	e.destinationNames=destinationNames
+	e.stringColors=stringColors
 
 	e.gameConstants = constants
 	e.gameConstants.NumPlayers = len(e.playerList)
