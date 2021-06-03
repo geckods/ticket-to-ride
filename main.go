@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 func main() {
 	constants := GameConstants{
 		NumColorCards:                       NUMCOLORCARDS,
@@ -21,5 +23,7 @@ func main() {
 	_ = constants
 	e := Engine{}
 	_ = e
+	e.initializeGame([]Player{}, constants)
+	fmt.Println(e.getGraphVizString())
 
 }
