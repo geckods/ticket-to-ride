@@ -1,6 +1,10 @@
 package main
 
-import "math/rand"
+import (
+	"math/rand"
+	"os"
+	"strconv"
+)
 
 //Source for rules: https://www.ultraboardgames.com/ticket-to-ride/game-rules.php
 
@@ -12,9 +16,11 @@ type Engine struct {
 	destinationTicketHands [][]DestinationTicket //which player has what destinationTickets: used for scoring purposes
 	numTrains              []int                 //how many trains the i'th player has left: the game will end when this is 0 for any player
 
-	trackList        []Track //the main game board:an array of Tracks, each track is a single edge
-	trackStatus      []int   //stores the current status of each track: which player owns it, or -1 for unoccupied
-	faceUpTrainCards []int   //the cards currently face up on the table, indexed by color
+	destinationNames []string //the list of destination names
+	stringColors     []string //the names of colors
+	trackList        []Track  //the main game board:an array of Tracks, each track is a single edge
+	trackStatus      []int    //stores the current status of each track: which player owns it, or -1 for unoccupied
+	faceUpTrainCards []int    //the cards currently face up on the table, indexed by color
 
 	pileOfTrainCards         []GameColor         //the facedown stack of train cards
 	pileOfDestinationTickets []DestinationTicket //the facedown stack of destination tickets
@@ -490,9 +496,56 @@ func (e *Engine) runGame(playerList []Player, constants GameConstants) []int {
 	gameOver := false
 	//run turns until the game is over
 	for !gameOver {
+
+		//write the graph to file
+		e.writeGraphToFile("graph.txt")
+
 		gameOver = e.runSingleTurn()
 	}
 
 	//determine the Winner
 	return e.determineWinners()
+}
+
+func (e *Engine) writeGraphToFile(filename string) {
+	file, err := os.Create(filename)
+	if err != nil {
+		panic("failed creating file")
+	}
+	defer file.Close()
+	_, err = file.WriteString(e.getGraphVizString())
+	if err != nil {
+		panic("failed writing to file")
+	}
+
+}
+
+func (e *Engine) getGraphVizString() string {
+	graphString := "Graph G {\n\t"
+	for i, track := range e.trackList {
+		graphString += e.destinationNames[track.d1]
+		graphString += " -- "
+		graphString += e.destinationNames[track.d2]
+		graphString += " [ len=" + strconv.Itoa(track.length) + ","
+		if e.trackStatus[i] == -1 {
+			//	the track is empty
+			graphString += "style=dotted,color="
+			if track.c == Rainbow {
+				graphString += "red:green:yellow:blue:orange:purple"
+			} else {
+				graphString += e.stringColors[track.c]
+			}
+		} else {
+			//there is a player on the track
+			graphString += "style=bold,color="
+			if e.trackStatus[i] == int(Rainbow) {
+				graphString += "red:green:yellow:blue:orange:purple"
+			} else {
+				graphString += e.stringColors[e.trackStatus[i]]
+			}
+		}
+		graphString += "]\n"
+	}
+	graphString += "}"
+	return graphString
 }
