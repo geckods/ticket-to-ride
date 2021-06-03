@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"os"
 	"strconv"
@@ -81,6 +82,7 @@ func (e *Engine) drawTopTrainCard() GameColor {
 }
 
 func (e *Engine) giveCardToPlayer(p int, c GameColor, toHideColorWhenInforming bool) {
+	fmt.Println("Giving a card of Color", stringColors[c], "to player", p)
 	//update the engine's copy
 	e.trainCardHands[p][c]++
 	//give the player his card
@@ -159,6 +161,7 @@ func (e *Engine) initializeGame(playerList []Player, constants GameConstants) {
 	e.trackList = listOfTracks
 	e.gameConstants.NumTracks = len(e.trackList)
 	e.trackStatus = make([]int, len(e.trackList))
+
 	for i := range e.trackStatus {
 		e.trackStatus[i] = -1
 	}
@@ -173,15 +176,23 @@ func (e *Engine) initializeGame(playerList []Player, constants GameConstants) {
 	}
 
 	//ADDING RETURN FOR DEBUGGING PURPOSES
-	return
+
 
 	for i, p := range e.playerList {
 		p.initialize(i, e.trackList, e.gameConstants)
 		//	initialize each player
 	}
 
+	e.faceUpTrainCards = make([]int, e.gameConstants.NumGameColors)
+	e.trainCardHands = make([][]int, e.gameConstants.NumPlayers)
+	for i,_ := range e.playerList {
+		e.trainCardHands[i] = make([]int, e.gameConstants.NumGameColors)
+	}
 	//	set up the pile of traincards (face up cards are initially all 0)
 	e.initializePileOfTrainCards(e.faceUpTrainCards)
+
+
+	e.destinationTicketHands = make([][]DestinationTicket, e.gameConstants.NumPlayers)
 
 	for i := range e.playerList {
 		//give each player the initial train cards, don't announce card color
@@ -330,18 +341,23 @@ func (e *Engine) runSingleTurn() bool {
 		return true
 	}
 
+	fmt.Println("It is the turn of player", e.activePlayer)
+
 	//first, inform the player of the game state
 	e.playerList[e.activePlayer].informStatus(e.trackStatus, e.faceUpTrainCards)
 
 	whichMove := e.playerList[e.activePlayer].askMove()
 	//first, ask the guy whose turn it is what he wants to d
 	if whichMove == 0 {
+		fmt.Println("Player", e.activePlayer, "has decided to pick up cards")
 		// let him pick up cards
 		e.runCollectionPhase()
 	} else if whichMove == 1 {
+		fmt.Println("Player", e.activePlayer, "has decided to lay tracks")
 		//ask them to put down some tracks
 		e.runTrackLayingPhase()
 	} else if whichMove == 2 {
+		fmt.Println("Player", e.activePlayer, "has decided to pick up destination tokens")
 		//finally ask them to decide and pick some destination tokens
 		e.runDestinationTokenCollectionPhase(e.activePlayer, e.gameConstants.NumDestinationTicketsOffered, e.gameConstants.NumDestinationTicketsPicked)
 	} else {
@@ -507,8 +523,11 @@ func (e *Engine) runGame(playerList []Player, constants GameConstants) []int {
 	e.initializeGame(playerList, constants)
 
 	gameOver := false
+
 	//run turns until the game is over
 	for !gameOver {
+
+
 
 		//write the graph to file
 		e.writeGraphToFile("graph.txt")

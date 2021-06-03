@@ -1,11 +1,15 @@
 package main
 
-import "reflect"
+import (
+	"reflect"
+)
 
 func itemExists(arrayType interface{}, item interface{}) bool {
 	arr := reflect.ValueOf(arrayType)
 
-	if arr.Kind() != reflect.Array {
+	if arr.Kind() != reflect.Slice {
+		//fmt.Println(arr.Kind())
+		//fmt.Println(reflect.Array)
 		panic("Invalid data-type")
 	}
 
