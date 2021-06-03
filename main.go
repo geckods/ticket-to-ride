@@ -23,7 +23,7 @@ func main() {
 	_ = constants
 	e := Engine{}
 	_ = e
-	e.initializeGame([]Player{}, constants)
+	e.initializeGame(make([]Player,10), constants)
 	fmt.Println(e.getGraphVizString())
 
 }
