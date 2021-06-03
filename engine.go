@@ -524,14 +524,12 @@ func (e *Engine) runGame(playerList []Player, constants GameConstants) []int {
 
 	gameOver := false
 
+	graphNumber := 0
 	//run turns until the game is over
 	for !gameOver {
-
-
-
 		//write the graph to file
-		e.writeGraphToFile("graph.txt")
-
+		e.writeGraphToFile("graphs/graph" + strconv.Itoa(graphNumber) +".txt")
+		graphNumber++
 		gameOver = e.runSingleTurn()
 	}
 
