@@ -569,13 +569,17 @@ func (e *Engine) runGame(playerList []Player, constants GameConstants) []int {
 
 	gameOver := false
 
-	graphNumber := 0
+	moveNumber := 0
 	//run turns until the game is over
 	for !gameOver {
 		//write the graph to file
-		e.writeGraphToFile("graphs/graph" + strconv.Itoa(graphNumber) +".txt")
-		graphNumber++
+		//e.writeGraphToFile("graphs/graph" + strconv.Itoa(graphNumber) +".txt")
+		//log the graph
+		moveNumber++
 		gameOver = e.runSingleTurn()
+		zap.L().Info("Logging Graph",
+			zap.String("GRAPH",e.getGraphVizString()),
+		)
 	}
 
 	//determine the Winner
