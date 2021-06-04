@@ -569,8 +569,15 @@ func (e *Engine) runGame(playerList []Player, constants GameConstants) []int {
 
 	gameOver := false
 
+	zap.L().Info("Logging Graph",
+		zap.String("EVENT","GRAPH"),
+		zap.String("GRAPH",e.getGraphVizString()),
+	)
+
+
 	moveNumber := 0
 	//run turns until the game is over
+
 	for !gameOver {
 		//write the graph to file
 		//e.writeGraphToFile("graphs/graph" + strconv.Itoa(graphNumber) +".txt")
@@ -578,6 +585,7 @@ func (e *Engine) runGame(playerList []Player, constants GameConstants) []int {
 		moveNumber++
 		gameOver = e.runSingleTurn()
 		zap.L().Info("Logging Graph",
+			zap.String("EVENT","GRAPH"),
 			zap.String("GRAPH",e.getGraphVizString()),
 		)
 	}
@@ -644,15 +652,8 @@ func (e *Engine) getGraphVizString() string {
 				graphString += e.stringColors[e.trackStatus[i]]
 			}
 		}
+		graphString += ",penwidth=2.0"
 
-		_,ok1 := mapPositions[e.destinationNames[track.d1]]
-		_,ok2 := mapPositions[e.destinationNames[track.d2]]
-
-		if ok1||ok2 {
-			graphString += ", weight=1"
-		} else {
-			graphString += ", weight=1"
-		}
 		graphString += "];\n"
 	}
 	graphString += "}"
