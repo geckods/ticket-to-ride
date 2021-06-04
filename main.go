@@ -2,10 +2,16 @@ package main
 
 import (
 	"fmt"
-	strcstrconv "strconv"
+	"go.uber.org/zap"
 )
 
+
+
 func main() {
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	zap.ReplaceGlobals(logger)
+
 	constants := GameConstants{
 		NumColorCards:                       NUMCOLORCARDS,
 		NumRainbowCards:                     NUMRAINBOWCARDS,
@@ -39,7 +45,7 @@ func main() {
 	winners := e.runGame(players, constants)
 
 	for _,winner := range winners {
-		fmt.Println("The winner was" + strcstrconv.Itoa(winner))
+		fmt.Println("The winner was", winner)
 	}
 
 }
