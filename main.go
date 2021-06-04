@@ -8,7 +8,18 @@ import (
 
 
 func main() {
-	logger, _ := zap.NewProduction()
+	consoleView := false
+	var myConfig zap.Config
+	if consoleView {
+		//use if you want to see events on the console
+		myConfig = zap.NewDevelopmentConfig()
+	} else {
+		myConfig = zap.NewProductionConfig()
+		myConfig.OutputPaths = append(myConfig.OutputPaths, "game.log")
+		//	want to write to stderr
+	}
+
+	logger, _ := myConfig.Build()
 	defer logger.Sync() // flushes buffer, if any
 	zap.ReplaceGlobals(logger)
 
