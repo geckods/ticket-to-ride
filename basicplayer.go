@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 type BasicPlayer struct {
 	trackList []Track //my copy of the board
 	trackStatus []int //my copy of the status of each track
@@ -46,7 +44,6 @@ func (b* BasicPlayer) whichTrackCanILay() (int, GameColor) {
 		if b.trackStatus[i]!=-1 || b.myTrains<track.length {
 			continue
 		}
-		fmt.Println("Found eligible track")
 		if track.c==Other {
 			for _, allcolor:=range listOfGameColors{
 				if allcolor!=Rainbow {
@@ -61,7 +58,6 @@ func (b* BasicPlayer) whichTrackCanILay() (int, GameColor) {
 			}
 		}
 	}
-	fmt.Println("Did not find track to be laid")
 	return -1, Other
 }
 func (b* BasicPlayer) askTrackLay() (int, GameColor){
