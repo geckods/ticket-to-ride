@@ -1,22 +1,33 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"go.uber.org/zap"
 )
 
+var toLog *bool
+var consoleView *bool
 
 
 func main() {
-	consoleView := false
+
+	//command line flags
+	toLog = flag.Bool("log", false, "Whether or not to log the operation of the engine. (default false)")
+	consoleView = flag.Bool("console", true, "Whether to log the operation to console or to file. (default true, to console)")
+
+	flag.Parse()
+
 	var myConfig zap.Config
-	if consoleView {
-		//use if you want to see events on the console
-		myConfig = zap.NewDevelopmentConfig()
-	} else {
-		myConfig = zap.NewProductionConfig()
-		myConfig.OutputPaths = append(myConfig.OutputPaths, "game.log")
-		//	want to write to stderr
+	if *toLog {
+		if *consoleView {
+			//use if you want to see events on the console
+			myConfig = zap.NewDevelopmentConfig()
+		} else {
+			myConfig = zap.NewProductionConfig()
+			myConfig.OutputPaths = append(myConfig.OutputPaths, "game.log")
+			//	want to write to stderr
+		}
 	}
 
 	logger, _ := myConfig.Build()
