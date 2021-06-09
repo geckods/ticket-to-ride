@@ -4,7 +4,9 @@ import (
 	"go.uber.org/zap"
 	"math/rand"
 	"os"
+	"os/exec"
 	"strconv"
+	"time"
 )
 
 //Source for rules: https://www.ultraboardgames.com/ticket-to-ride/game-rules.php
@@ -575,50 +577,87 @@ func (e *Engine) determineWinners() []int {
 	return winners
 }
 
+func (e *Engine) updateGraphVizString(vizString *string) bool {
+	newString := e.getGraphVizString()
+	if newString != *vizString {
+		*vizString = newString
+		return true
+	}
+	return false
+}
+
+func (e *Engine) doGraphStuff(vizString *string) {
+	if toGenerateGraphs {
+		if e.updateGraphVizString(vizString) {
+
+			if *toLog && !*consoleView {
+				zap.L().Info("Logging Graph",
+					zap.String("EVENT", "GRAPH"),
+					zap.String("GRAPH", *vizString),
+				)
+			}
+		}
+
+		if *toUseVisualizer {
+			//	TODO: write graph to file and use os exec to generate graph, then send on socket to tell the website to update the graph
+
+			//	write graph to file
+			e.writeGraphToFile("visualizer/graph_pics/graph", *vizString)
+			//	generate png
+			cmd := exec.Command("neato", "visualizer/graph_pics/graph", "-Tpng")
+			out,err := cmd.CombinedOutput()
+			if err != nil {
+				zap.S().Fatal(err)
+			}
+			//fmt.Println(out)
+			file, err := os.Create("visualizer/graph_pics/graph.png")
+			if err != nil {
+				panic("failed creating file")
+			}
+			defer file.Close()
+			_, err = file.Write(out)
+			if err != nil {
+				panic("failed writing to file")
+			}
+
+			server.BroadcastToNamespace("/", "Graph Update")
+
+			time.Sleep(1*time.Second)
+		}
+	}
+}
+
 func (e *Engine) runGame(playerList []Player, constants GameConstants) []int {
 	//initialize
 	e.initializeGame(playerList, constants)
 
 	gameOver := false
-	if *toLog {
-		if !*consoleView {
-			zap.L().Info("Logging Graph",
-				zap.String("EVENT", "GRAPH"),
-				zap.String("GRAPH", e.getGraphVizString()),
-			)
-		}
-	}
+	graphVizString := ""
+
+	e.doGraphStuff(&graphVizString)
 
 	moveNumber := 0
 	//run turns until the game is over
 
 	for !gameOver {
-		//write the graph to file
-		//e.writeGraphToFile("graphs/graph" + strconv.Itoa(graphNumber) +".txt")
-		//log the graph
 		moveNumber++
 		gameOver = e.runSingleTurn()
-		if *toLog {
-			if !*consoleView {
-				zap.L().Info("Logging Graph",
-					zap.String("EVENT", "GRAPH"),
-					zap.String("GRAPH", e.getGraphVizString()),
-				)
-			}
-		}
+
+		//log the graph
+		e.doGraphStuff(&graphVizString)
 	}
 
 	//determine the Winner
 	return e.determineWinners()
 }
 
-func (e *Engine) writeGraphToFile(filename string) {
+func (e *Engine) writeGraphToFile(filename string, vizString string) {
 	file, err := os.Create(filename)
 	if err != nil {
 		panic("failed creating file")
 	}
 	defer file.Close()
-	_, err = file.WriteString(e.getGraphVizString())
+	_, err = file.WriteString(vizString)
 	if err != nil {
 		panic("failed writing to file")
 	}
