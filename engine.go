@@ -83,7 +83,7 @@ func (e *Engine) drawTopTrainCard() GameColor {
 	return element
 }
 
-func (e *Engine) giveCardToPlayer(p int, c GameColor, toHideColorWhenInforming bool) {
+func (e *Engine) logGiveCardToPlayer(p int, c GameColor, toHideColorWhenInforming bool) {
 	if *toLog {
 		zap.L().Info("Engine: Giving a card of Color "+stringColors[c]+" to player "+strconv.Itoa(p),
 			zap.String("EVENT", "GIVING_TRAIN_CARD"),
@@ -91,6 +91,15 @@ func (e *Engine) giveCardToPlayer(p int, c GameColor, toHideColorWhenInforming b
 			zap.Int("PLAYER", p),
 		)
 	}
+
+	if *toUseVisualizer {
+		server.BroadcastToNamespace("/", "ENGINE_UPDATE", "Engine: Giving a card of Color "+stringColors[c]+" to player "+strconv.Itoa(p))
+	}
+}
+
+func (e *Engine) giveCardToPlayer(p int, c GameColor, toHideColorWhenInforming bool) {
+
+	e.logGiveCardToPlayer(p,c,toHideColorWhenInforming)
 	//update the engine's copy
 	e.trainCardHands[p][c]++
 	//give the player his card
@@ -106,7 +115,7 @@ func (e *Engine) giveCardToPlayer(p int, c GameColor, toHideColorWhenInforming b
 	}
 }
 
-func (e *Engine) giveDestinationTicketToPlayer(p int, ticket DestinationTicket) {
+func (e *Engine) logGiveDestinationTicketToPlayer(p int, ticket DestinationTicket){
 	if *toLog {
 		zap.L().Info("Engine: Giving a destination ticket from "+e.destinationNames[ticket.d1]+" to "+e.destinationNames[ticket.d2]+" of score "+strconv.Itoa(ticket.points)+" to player "+strconv.Itoa(p),
 			zap.String("EVENT", "GIVING_DESTINATION_TICKET"),
@@ -116,6 +125,14 @@ func (e *Engine) giveDestinationTicketToPlayer(p int, ticket DestinationTicket) 
 			zap.Int("PLAYER", p),
 		)
 	}
+
+	if *toUseVisualizer {
+		server.BroadcastToNamespace("/", "ENGINE_UPDATE", "Engine: Giving a destination ticket from "+e.destinationNames[ticket.d1]+" to "+e.destinationNames[ticket.d2]+" of score "+strconv.Itoa(ticket.points)+" to player "+strconv.Itoa(p))
+	}
+}
+
+func (e *Engine) giveDestinationTicketToPlayer(p int, ticket DestinationTicket) {
+	e.logGiveDestinationTicketToPlayer(p, ticket)
 	//update the engine's copy
 	e.destinationTicketHands[p] = append(e.destinationTicketHands[p], ticket)
 	//give the player his card
@@ -270,6 +287,24 @@ func (e *Engine) runCollectionPhase() {
 	}
 }
 
+func (e *Engine) logTrackLay(whichTrack int, whichColor GameColor, howManyColored, howManyRainbows int) {
+	if *toLog {
+		zap.L().Info("Engine: Player "+strconv.Itoa(e.activePlayer)+" has laid down a track from "+e.destinationNames[e.trackList[whichTrack].d1]+" to "+e.destinationNames[e.trackList[whichTrack].d2]+" costing "+strconv.Itoa(howManyColored)+" train cards of color "+e.stringColors[whichColor]+" and "+strconv.Itoa(howManyRainbows)+" rainbow Cards.",
+			zap.String("EVENT", "LAYING_TRACK"),
+			zap.String("DEST_1", e.destinationNames[e.trackList[whichTrack].d1]),
+			zap.String("DEST_2", e.destinationNames[e.trackList[whichTrack].d2]),
+			zap.String("PRIMARY_COLOR", e.stringColors[whichColor]),
+			zap.Int("NUM_PRIMARY", howManyColored),
+			zap.Int("NUM_RAINBOW", howManyRainbows),
+			zap.Int("PLAYER", e.activePlayer),
+		)
+	}
+
+	if *toUseVisualizer {
+		server.BroadcastToNamespace("/", "ENGINE_UPDATE", "Engine: Player "+strconv.Itoa(e.activePlayer)+" has laid down a track from "+e.destinationNames[e.trackList[whichTrack].d1]+" to "+e.destinationNames[e.trackList[whichTrack].d2]+" costing "+strconv.Itoa(howManyColored)+" train cards of color "+e.stringColors[whichColor]+" and "+strconv.Itoa(howManyRainbows)+" rainbow Cards.")
+	}
+}
+
 func (e *Engine) runTrackLayingPhase() bool {
 	whichTrack, whichColor := e.playerList[e.activePlayer].askTrackLay()
 	if e.trackStatus[whichTrack] != -1 {
@@ -309,17 +344,7 @@ func (e *Engine) runTrackLayingPhase() bool {
 	//remove the trains
 	e.numTrains[e.activePlayer] -= e.trackList[whichTrack].length
 
-	if *toLog {
-		zap.L().Info("Engine: Player "+strconv.Itoa(e.activePlayer)+" has laid down a track from "+e.destinationNames[e.trackList[whichTrack].d1]+" to "+e.destinationNames[e.trackList[whichTrack].d2]+" costing "+strconv.Itoa(howManyColored)+" train cards of color "+e.stringColors[whichColor]+" and "+strconv.Itoa(howManyRainbows)+" rainbow Cards.",
-			zap.String("EVENT", "LAYING_TRACK"),
-			zap.String("DEST_1", e.destinationNames[e.trackList[whichTrack].d1]),
-			zap.String("DEST_2", e.destinationNames[e.trackList[whichTrack].d2]),
-			zap.String("PRIMARY_COLOR", e.stringColors[whichColor]),
-			zap.Int("NUM_PRIMARY", howManyColored),
-			zap.Int("NUM_RAINBOW", howManyRainbows),
-			zap.Int("PLAYER", e.activePlayer),
-		)
-	}
+	e.logTrackLay(whichTrack, whichColor, howManyColored, howManyRainbows)
 
 	return e.numTrains[e.activePlayer] == 0
 }
@@ -367,49 +392,73 @@ func (e *Engine) putDestinationTicketBackInPile(ticket DestinationTicket) {
 	e.pileOfDestinationTickets = append([]DestinationTicket{ticket}, e.pileOfDestinationTickets...)
 }
 
-func (e *Engine) runSingleTurn() bool {
-
-	//end condition: since this turn is starting with a player with less than two trains, he must have reached here on the previous move
-	if e.numTrains[e.activePlayer] <= 2 {
-		return true
-	}
-
+func (e *Engine) logPlayerTurn() {
 	if *toLog {
 		zap.L().Info("Engine: It is the turn of player"+strconv.Itoa(e.activePlayer),
 			zap.String("EVENT", "TURN_START"),
 			zap.Int("PLAYER", e.activePlayer),
 		)
 	}
-	//first, inform the player of the game state
-	e.playerList[e.activePlayer].informStatus(e.trackStatus, e.faceUpTrainCards)
 
-	whichMove := e.playerList[e.activePlayer].askMove()
-	//first, ask the guy whose turn it is what he wants to d
-	if whichMove == 0 {
-		if *toLog {
+	if *toUseVisualizer {
+		server.BroadcastToNamespace("/", "ENGINE_UPDATE", "Engine: It is the turn of player"+strconv.Itoa(e.activePlayer))
+	}
+}
+
+func (e *Engine) logPlayerDecision(whichMove int) {
+	if *toLog {
+		if whichMove == 0 {
 			zap.L().Info("Engine: Player "+strconv.Itoa(e.activePlayer)+" has decided to pick up cards",
 				zap.String("EVENT", "DECIDE_PICK_UP_CARDS"),
 				zap.Int("PLAYER", e.activePlayer),
 			)
-		}
-		// let him pick up cards
-		e.runCollectionPhase()
-	} else if whichMove == 1 {
-		if *toLog {
+		} else if whichMove == 1 {
 			zap.L().Info("Engine: Player "+strconv.Itoa(e.activePlayer)+" has decided to lay tracks",
 				zap.String("EVENT", "DECIDE_LAY_TRACK"),
 				zap.Int("PLAYER", e.activePlayer),
 			)
-		}
-		//ask them to put down some tracks
-		e.runTrackLayingPhase()
-	} else if whichMove == 2 {
-		if *toLog {
+		} else if whichMove==2 {
 			zap.L().Info("Engine: Player "+strconv.Itoa(e.activePlayer)+" has decided to pick up destination tickets",
 				zap.String("EVENT", "DECIDE_PICK_UP_DESTINATION_TICKET"),
 				zap.Int("PLAYER", e.activePlayer),
 			)
 		}
+	}
+
+	if *toUseVisualizer {
+		if whichMove == 0 {
+			server.BroadcastToNamespace("/", "ENGINE_UPDATE", "Engine: Player "+strconv.Itoa(e.activePlayer)+" has decided to pick up cards")
+		} else if whichMove == 1 {
+			server.BroadcastToNamespace("/", "ENGINE_UPDATE", "Engine: Player "+strconv.Itoa(e.activePlayer)+" has decided to lay tracks")
+		} else if whichMove==2 {
+			server.BroadcastToNamespace("/", "ENGINE_UPDATE", "Engine: Player "+strconv.Itoa(e.activePlayer)+" has decided to pick up destination tickets")
+		}
+	}
+}
+
+func (e *Engine) runSingleTurn() bool {
+
+	e.logPlayerTurn()
+
+	//end condition: since this turn is starting with a player with less than two trains, he must have reached here on the previous move
+	if e.numTrains[e.activePlayer] <= 2 {
+		return true
+	}
+
+	//first, inform the player of the game state
+	e.playerList[e.activePlayer].informStatus(e.trackStatus, e.faceUpTrainCards)
+
+	whichMove := e.playerList[e.activePlayer].askMove()
+	//first, ask the guy whose turn it is what he wants to d
+	e.logPlayerDecision(whichMove)
+
+	if whichMove == 0 {
+		// let him pick up cards
+		e.runCollectionPhase()
+	} else if whichMove == 1 {
+		//ask them to put down some tracks
+		e.runTrackLayingPhase()
+	} else if whichMove == 2 {
 		//finally ask them to decide and pick some destination tokens
 		e.runDestinationTokenCollectionPhase(e.activePlayer, e.gameConstants.NumDestinationTicketsOffered, e.gameConstants.NumDestinationTicketsPicked)
 	} else {
@@ -547,6 +596,21 @@ func (e *Engine) getLongestPathPlayers() []int {
 	return longestPathers
 }
 
+func (e *Engine) logPlayerScore(i,sc int) {
+	if *toLog {
+		zap.L().Info("Engine: The score of player "+strconv.Itoa(i)+" is "+strconv.Itoa(sc),
+			zap.String("EVENT", "SCORE_COMPUTE"),
+			zap.Int("PLAYER", i),
+			zap.Int("SCORE", sc),
+		)
+	}
+
+	if *toUseVisualizer {
+		server.BroadcastToNamespace("/", "ENGINE_UPDATE", "Engine: The score of player "+strconv.Itoa(i)+" is "+strconv.Itoa(sc))
+	}
+
+}
+
 func (e *Engine) determineWinners() []int {
 	winners := make([]int, 0)
 	currBestScore := 0
@@ -559,13 +623,7 @@ func (e *Engine) determineWinners() []int {
 		if itemExists(longestPathPlayers, i) {
 			sc += e.gameConstants.LongestPathScore
 		}
-		if *toLog {
-			zap.L().Info("Engine: The score of player "+strconv.Itoa(i)+" is "+strconv.Itoa(sc),
-				zap.String("EVENT", "SCORE_COMPUTE"),
-				zap.Int("PLAYER", i),
-				zap.Int("SCORE", sc),
-			)
-		}
+		e.logPlayerScore(i, sc)
 		if sc > currBestScore {
 			currBestScore = sc
 			winners = nil
@@ -599,7 +657,6 @@ func (e *Engine) doGraphStuff(vizString *string) {
 		}
 
 		if *toUseVisualizer {
-			//	TODO: write graph to file and use os exec to generate graph, then send on socket to tell the website to update the graph
 
 			//	write graph to file
 			e.writeGraphToFile("visualizer/graph_pics/graph", *vizString)
@@ -620,7 +677,7 @@ func (e *Engine) doGraphStuff(vizString *string) {
 				panic("failed writing to file")
 			}
 
-			server.BroadcastToNamespace("/", "Graph Update")
+			server.BroadcastToNamespace("/", "GRAPH_UPDATE")
 
 			time.Sleep(1*time.Second)
 		}
@@ -692,6 +749,7 @@ func (e *Engine) getGraphVizString() string {
 		graphString += " -- "
 		graphString += e.destinationNames[track.d2]
 		graphString += " [ len=" + strconv.Itoa(track.length) + ","
+		graphString += " label=" + strconv.Itoa(track.idx) + ","
 		if e.trackStatus[i] == -1 {
 			//	the track is empty
 			graphString += "style=dotted,color="
