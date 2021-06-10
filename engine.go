@@ -654,32 +654,32 @@ func (e *Engine) doGraphStuff(vizString *string) {
 					zap.String("GRAPH", *vizString),
 				)
 			}
-		}
 
-		if *toUseVisualizer {
+			if *toUseVisualizer {
 
-			//	write graph to file
-			e.writeGraphToFile("visualizer/graph_pics/graph", *vizString)
-			//	generate png
-			cmd := exec.Command("neato", "visualizer/graph_pics/graph", "-Tpng")
-			out,err := cmd.CombinedOutput()
-			if err != nil {
-				zap.S().Fatal(err)
+				//	write graph to file
+				e.writeGraphToFile("visualizer/graph_pics/graph", *vizString)
+				//	generate png
+				cmd := exec.Command("neato", "visualizer/graph_pics/graph", "-Tpng")
+				out,err := cmd.CombinedOutput()
+				if err != nil {
+					zap.S().Fatal(err)
+				}
+				//fmt.Println(out)
+				file, err := os.Create("visualizer/graph_pics/graph.png")
+				if err != nil {
+					panic("failed creating file")
+				}
+				defer file.Close()
+				_, err = file.Write(out)
+				if err != nil {
+					panic("failed writing to file")
+				}
+
+				server.BroadcastToNamespace("/", "GRAPH_UPDATE")
+
+				time.Sleep(1*time.Second)
 			}
-			//fmt.Println(out)
-			file, err := os.Create("visualizer/graph_pics/graph.png")
-			if err != nil {
-				panic("failed creating file")
-			}
-			defer file.Close()
-			_, err = file.Write(out)
-			if err != nil {
-				panic("failed writing to file")
-			}
-
-			server.BroadcastToNamespace("/", "GRAPH_UPDATE")
-
-			time.Sleep(1*time.Second)
 		}
 	}
 }
@@ -733,6 +733,9 @@ func (e *Engine) getGraphVizString() string {
 	graphString := "Graph G {\n"
 	graphString += "\toverlap=true\n"
 	graphString += "\tmode=KK\n"
+	//graphString += "\tfontsize=30.0\n"
+	graphString += " splines=spline"
+
 
 	for dest,pos := range mapPositions {
 		graphString += "\t"
@@ -743,6 +746,14 @@ func (e *Engine) getGraphVizString() string {
 		graphString += "\n"
 	}
 
+	for _,dest := range e.destinationNames {
+		graphString += "\t"
+		graphString += dest
+		graphString += " [ fontsize=17 ]"
+		graphString += "\n"
+
+	}
+
 	for i, track := range e.trackList {
 		graphString += "\t"
 		graphString += e.destinationNames[track.d1]
@@ -750,9 +761,11 @@ func (e *Engine) getGraphVizString() string {
 		graphString += e.destinationNames[track.d2]
 		graphString += " [ len=" + strconv.Itoa(track.length) + ","
 		graphString += " label=" + strconv.Itoa(track.idx) + ","
+		graphString += " fontsize= 20,"
+
 		if e.trackStatus[i] == -1 {
 			//	the track is empty
-			graphString += "style=dotted,color="
+			graphString += "style=dotted,penwidth=3.0,color="
 			if track.c == Rainbow {
 				graphString += "red:green:yellow:blue:orange:purple"
 			} else {
@@ -760,14 +773,14 @@ func (e *Engine) getGraphVizString() string {
 			}
 		} else {
 			//there is a player on the track
-			graphString += "style=bold,color="
+			graphString += "style=bold,penwidth=7.0,color="
 			if e.trackStatus[i] == int(Rainbow) {
 				graphString += "red:green:yellow:blue:orange:purple"
 			} else {
 				graphString += e.stringColors[e.trackStatus[i]]
 			}
 		}
-		graphString += ",penwidth=2.0"
+		//graphString += ",penwidth=4.0"
 
 		graphString += "];\n"
 	}
