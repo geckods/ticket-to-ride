@@ -132,7 +132,7 @@ func main() {
 
 	if *toUseVisualizer {
 		for _,winner := range winners {
-			server.BroadcastToNamespace("/", "chat message", "The winner was " + strconv.Itoa(winner))
+			server.BroadcastToNamespace("/", "ENGINE_UPDATE", "The winner was " + strconv.Itoa(winner))
 		}
 		wg.Wait()
 	}
