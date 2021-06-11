@@ -377,10 +377,11 @@ func (a* AardvarkPlayer) askMove() int{
 	}
 } //Ask the player what move he wants to do: 0 is pick up cards, 1 is place Tracks, 2 is pick destination ticket
 
-func (a* AardvarkPlayer) askPickup(howManyLeft int) GameColor {
+func (a* AardvarkPlayer) askPickup(howManyLeft int, faceUpCards []int) GameColor {
+	a.faceUpCards = faceUpCards
 	canLayTrack, c := a.canILayThisTrack(a.lastChosentrack)
-	if canLayTrack {
-		panic("I Thought I couldn't lay the track but I can")
+	if canLayTrack && howManyLeft == 2 {
+		panic("I thought I couldn't lay this track but I can")
 	}
 	if a.faceUpCards[c] > 0 {
 		return c

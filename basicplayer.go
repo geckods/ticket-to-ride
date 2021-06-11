@@ -87,7 +87,8 @@ func (b* BasicPlayer) askMove() int{
 
 } //Ask the player what move he wants to do: 0 is pick up cards, 1 is place Tracks, 2 is pick destination ticket
 
-func (b* BasicPlayer) askPickup(howManyLeft int) GameColor {
+func (b* BasicPlayer) askPickup(howManyLeft int, faceUpCards[]int) GameColor {
+	b.faceUpCards = faceUpCards
 	return Other
 }   //ask this player, given the gamestate, which card he wants to pick up
 

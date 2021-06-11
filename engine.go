@@ -247,7 +247,7 @@ func (e *Engine) initializeGame(playerList []Player, constants GameConstants) {
 }
 
 func (e *Engine) runCollectionPhase() {
-	whichColor := e.playerList[e.activePlayer].askPickup(2)
+	whichColor := e.playerList[e.activePlayer].askPickup(2, e.faceUpTrainCards)
 	if whichColor != Other {
 		//	he wants a faceup card
 		if e.faceUpTrainCards[whichColor] <= 0 {
@@ -267,7 +267,7 @@ func (e *Engine) runCollectionPhase() {
 		e.giveCardToPlayer(e.activePlayer, e.drawTopTrainCard(), true)
 	}
 
-	whichColor = e.playerList[e.activePlayer].askPickup(1)
+	whichColor = e.playerList[e.activePlayer].askPickup(1, e.faceUpTrainCards)
 	if whichColor == Rainbow {
 		panic("The player picked a rainbow on his second turn")
 	}
