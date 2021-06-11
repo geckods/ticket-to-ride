@@ -474,3 +474,12 @@ func (a* AardvarkPlayer) offerDestinationTickets(dtlist []DestinationTicket,howm
 	}
 	return ret
 }//offer a list of destination cards and tell the player to take some of them
+
+//ideas:
+//a: this
+//b: this, but hand-tuned further
+//c: this, but genetically evolved via self play
+//d: c, but also add multiplication parameters for each weight
+//e: d, but evolve 3 sets of parameters for the game: for early game, mid-game, and late-game (come up with some definition for early/mid/late game)
+//f: add in the ability to pick up destination cards probabilistically
+//g: fully general neuroevolved self-play
