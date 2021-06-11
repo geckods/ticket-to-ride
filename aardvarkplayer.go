@@ -16,29 +16,21 @@ import (
 //  our decision making is to basically select a road based on a probability distribution of these scores for each track, and then play the optimal move for that track
 //  i.e. if you can place it, place it, else if you can't, pick up the right card for it
 
-const UintSize = 32 << (^uint(0) >> 32 & 1) // 32 or 64
-
 //related to computation of dt scores
 const longerPathMultiplier = 0.5
-const pathDenominatorPower = 5.0
 
+const pathDenominatorPower = 5.0
 // related to computation of difficulty scores
 const valueOfCardOnTable = 0.5
-const difficultyOfGettingBase = 0.9
 
+const difficultyOfGettingBase = 0.9
 //related to merging the three metrics
 const destinationTicketMultiplier = 1.0
-const trackBonusMultiplier = 0.0
-const difficultyOfGettingMultiplier = 0.0
 
+const trackBonusMultiplier = 0.1
+const difficultyOfGettingMultiplier = 0.0
 // related to later optimization
 const constantForRepeat = 1
-
-
-const (
-	MaxInt  = 1<<(UintSize-1) - 1 // 1<<31 - 1 or 1<<63 - 1
-	MaxUint = 1<<UintSize - 1     // 1<<32 - 1 or 1<<64 - 1
-)
 
 type AardvarkPlayer struct {
 	trackList []Track //my copy of the board
@@ -482,4 +474,5 @@ func (a* AardvarkPlayer) offerDestinationTickets(dtlist []DestinationTicket,howm
 //d: c, but also add multiplication parameters for each weight
 //e: d, but evolve 3 sets of parameters for the game: for early game, mid-game, and late-game (come up with some definition for early/mid/late game)
 //f: add in the ability to pick up destination cards probabilistically
+// at some point, I need to also add in modelling of opponent hands and opponent play
 //g: fully general neuroevolved self-play
