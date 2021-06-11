@@ -78,8 +78,14 @@ var stringColors = []string{"red", "orange", "yellow", "green", "blue", "purple"
 var listOfGameColors = [...]GameColor{Red, Orange, Yellow, Green, Blue, Purple, Black, White, Rainbow}
 
 //TODO: build DestinationTicket array
-var listOfDestinationTickets = []DestinationTicket{{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100},{Chicago, Pittsburgh, 100}}
-
+var listOfDestinationTickets = []DestinationTicket{{Boston, Miami,12},{Calgary,Phoenix,13},{Calgary,Salt_Lake_City,7},
+	{Chicago,New_Orleans,7},{Chicago,Santa_Fe,9},{Dallas, New_York,11},{Denver, El_Paso,4},
+	{Denver, Pittsburgh,11},{Duluth, El_Paso,10},{Duluth, Houston,8},{Helena, Los_Angeles,8},
+	{Kansas_City, Houston,5},{Los_Angeles,Chicago,16},{Los_Angeles, Miami,20},{Los_Angeles,New_York, 21},
+	{Montreal, Atlanta, 9},{Montreal, New_Orleans, 13},{New_York,Atlanta, 6},{Portland,Nashville,17},
+	{Portland, Phoenix, 11},{San_Francisco, Atlanta,17},{Sault_St_Marie, Nashville,8},{Sault_St_Marie,Oklahoma_City, 9},
+	{Seattle, Los_Angeles, 9},{Seattle, New_York, 22},{Toronto, Miami, 10},{Vancouver, Montreal,20 },{Vancouver, Santa_Fe, 13},
+	{Winnipeg, Houston,12},{Winnipeg, Little_Rock,11 }}
 //TODO: build Track array
 var listOfTracks = []Track{{0, Vancouver, Seattle, Other, 1}, {1, Seattle, Portland, Other, 1}, {2, Portland, San_Francisco, Green, 5}, {3, San_Francisco, Los_Angeles, Purple, 3}, {4, Los_Angeles, El_Paso, Black, 6},
 	{5, Los_Angeles, Phoenix, Other, 3}, {6, Phoenix, El_Paso, Other, 3}, {7, Los_Angeles, Las_Vegas, Other, 2}, {8, San_Francisco, Salt_Lake_City, Orange, 5}, {9, Portland, Salt_Lake_City, Blue, 6}, {10, Seattle, Helena, Yellow, 6}, {11, Seattle, Calgary, Other, 4}, {12, Vancouver, Calgary, Other, 3}, {13, Calgary, Winnipeg, White, 6},
