@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"time"
 )
 
 //Source for rules: https://www.ultraboardgames.com/ticket-to-ride/game-rules.php
@@ -683,7 +682,7 @@ func (e *Engine) doGraphStuff(vizString *string) {
 
 				server.BroadcastToNamespace("/", "GRAPH_UPDATE")
 
-				time.Sleep(1*time.Second)
+				//time.Sleep(200*time.Millisecond)
 			}
 		}
 	}

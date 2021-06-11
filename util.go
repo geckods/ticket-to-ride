@@ -26,3 +26,13 @@ func min(a, b int) int {
 	}
 	return b
 }
+
+func normalizeFloatSlice(sl *[]float64){
+	sum := float64(0)
+	for _,elem := range *sl {
+		sum+=elem
+	}
+	for i,_ := range *sl {
+		(*sl)[i]/=sum
+	}
+}

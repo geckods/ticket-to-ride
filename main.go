@@ -6,6 +6,7 @@ import (
 	socketio "github.com/googollee/go-socket.io"
 	"go.uber.org/zap"
 	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"sync"
@@ -20,6 +21,9 @@ var toGenerateGraphs bool
 var server *socketio.Server //may be required globally
 
 func main() {
+
+	//seed random number generator
+	rand.Seed(time.Now().UTC().UnixNano())
 
 	//command line flags
 	toLog = flag.Bool("log", false, "Whether or not to log the operation of the engine. (default false)")
@@ -108,9 +112,9 @@ func main() {
 	e := Engine{}
 	_ = e
 	players := make([]Player, 0)
-	player1 := BasicPlayer{}
+	player1 := AardvarkPlayer{}
 	players = append(players, &player1)
-	player2 := BasicPlayer{}
+	player2 := AardvarkPlayer{}
 	players = append(players, &player2)
 	player3 := BasicPlayer{}
 	players = append(players, &player3)
