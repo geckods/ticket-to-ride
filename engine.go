@@ -344,6 +344,11 @@ func (e *Engine) runTrackLayingPhase() bool {
 	//remove the trains
 	e.numTrains[e.activePlayer] -= e.trackList[whichTrack].length
 
+	//tell all other players about the trackLay
+	for _,player := range e.playerList {
+		player.informTrackLay(e.activePlayer, whichTrack)
+	}
+
 	e.logTrackLay(whichTrack, whichColor, howManyColored, howManyRainbows)
 
 	return e.numTrains[e.activePlayer] == 0

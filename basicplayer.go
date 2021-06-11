@@ -31,7 +31,7 @@ func (b* BasicPlayer) informCardPickup(int, GameColor) {
 	//	do nothing
 }
 
-func (b* BasicPlayer) informTrackLay(int, Track) {
+func (b* BasicPlayer) informTrackLay(int, int) {
 	//	do nothing
 }
 
