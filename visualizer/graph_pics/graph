@@ -1,0 +1,125 @@
+Graph G {
+	overlap=true
+	mode=KK
+ splines=spline	Omaha [ pos="12,-6!" ];
+	Winnipeg [ pos="10,0!" ];
+	Portland [ pos="0,-2.5!" ];
+	Vancouver [ pos="0,0!" ];
+	Boston [ pos="24,0!" ];
+	Los_Angeles [ pos="0,-12!" ];
+	Miami [ pos="24,-14!" ];
+	Atlanta [ fontsize=17 ]
+	Boston [ fontsize=17 ]
+	Calgary [ fontsize=17 ]
+	Charleston [ fontsize=17 ]
+	Chicago [ fontsize=17 ]
+	Dallas [ fontsize=17 ]
+	Denver [ fontsize=17 ]
+	Duluth [ fontsize=17 ]
+	El_Paso [ fontsize=17 ]
+	Helena [ fontsize=17 ]
+	Houston [ fontsize=17 ]
+	Kansas_City [ fontsize=17 ]
+	Las_Vegas [ fontsize=17 ]
+	Little_Rock [ fontsize=17 ]
+	Los_Angeles [ fontsize=17 ]
+	Miami [ fontsize=17 ]
+	Montreal [ fontsize=17 ]
+	Nashville [ fontsize=17 ]
+	New_Orleans [ fontsize=17 ]
+	New_York [ fontsize=17 ]
+	Oklahoma_City [ fontsize=17 ]
+	Omaha [ fontsize=17 ]
+	Phoenix [ fontsize=17 ]
+	Pittsburgh [ fontsize=17 ]
+	Portland [ fontsize=17 ]
+	Raleigh [ fontsize=17 ]
+	Saint_Louis [ fontsize=17 ]
+	Salt_Lake_City [ fontsize=17 ]
+	San_Francisco [ fontsize=17 ]
+	Santa_Fe [ fontsize=17 ]
+	Sault_St_Marie [ fontsize=17 ]
+	Seattle [ fontsize=17 ]
+	Toronto [ fontsize=17 ]
+	Vancouver [ fontsize=17 ]
+	Washington [ fontsize=17 ]
+	Winnipeg [ fontsize=17 ]
+	Vancouver -- Seattle [ len=1, label=0, fontsize= 20,style=bold,penwidth=7.0,color=red];
+	Seattle -- Portland [ len=1, label=1, fontsize= 20,style=bold,penwidth=7.0,color=orange];
+	Portland -- San_Francisco [ len=5, label=2, fontsize= 20,style=dotted,penwidth=3.0,color=green];
+	San_Francisco -- Los_Angeles [ len=3, label=3, fontsize= 20,style=bold,penwidth=7.0,color=red];
+	Los_Angeles -- El_Paso [ len=6, label=4, fontsize= 20,style=dotted,penwidth=3.0,color=black];
+	Los_Angeles -- Phoenix [ len=3, label=5, fontsize= 20,style=bold,penwidth=7.0,color=green];
+	Phoenix -- El_Paso [ len=3, label=6, fontsize= 20,style=bold,penwidth=7.0,color=green];
+	Los_Angeles -- Las_Vegas [ len=2, label=7, fontsize= 20,style=bold,penwidth=7.0,color=red];
+	San_Francisco -- Salt_Lake_City [ len=5, label=8, fontsize= 20,style=dotted,penwidth=3.0,color=orange];
+	Portland -- Salt_Lake_City [ len=6, label=9, fontsize= 20,style=dotted,penwidth=3.0,color=blue];
+	Seattle -- Helena [ len=6, label=10, fontsize= 20,style=dotted,penwidth=3.0,color=yellow];
+	Seattle -- Calgary [ len=4, label=11, fontsize= 20,style=dotted,penwidth=3.0,color=grey];
+	Vancouver -- Calgary [ len=3, label=12, fontsize= 20,style=bold,penwidth=7.0,color=yellow];
+	Calgary -- Winnipeg [ len=6, label=13, fontsize= 20,style=dotted,penwidth=3.0,color=white];
+	Calgary -- Helena [ len=4, label=14, fontsize= 20,style=dotted,penwidth=3.0,color=grey];
+	Winnipeg -- Helena [ len=4, label=15, fontsize= 20,style=dotted,penwidth=3.0,color=blue];
+	Helena -- Salt_Lake_City [ len=3, label=16, fontsize= 20,style=dotted,penwidth=3.0,color=purple];
+	Salt_Lake_City -- Las_Vegas [ len=3, label=17, fontsize= 20,style=dotted,penwidth=3.0,color=orange];
+	Salt_Lake_City -- Denver [ len=3, label=18, fontsize= 20,style=dotted,penwidth=3.0,color=red];
+	Phoenix -- Denver [ len=5, label=19, fontsize= 20,style=dotted,penwidth=3.0,color=white];
+	Phoenix -- Santa_Fe [ len=3, label=20, fontsize= 20,style=bold,penwidth=7.0,color=orange];
+	El_Paso -- Santa_Fe [ len=2, label=21, fontsize= 20,style=bold,penwidth=7.0,color=green];
+	Santa_Fe -- Denver [ len=2, label=22, fontsize= 20,style=bold,penwidth=7.0,color=yellow];
+	Helena -- Duluth [ len=6, label=23, fontsize= 20,style=dotted,penwidth=3.0,color=orange];
+	Winnipeg -- Duluth [ len=4, label=24, fontsize= 20,style=dotted,penwidth=3.0,color=black];
+	Winnipeg -- Sault_St_Marie [ len=6, label=25, fontsize= 20,style=dotted,penwidth=3.0,color=grey];
+	Duluth -- Sault_St_Marie [ len=3, label=26, fontsize= 20,style=dotted,penwidth=3.0,color=grey];
+	Sault_St_Marie -- Montreal [ len=5, label=27, fontsize= 20,style=dotted,penwidth=3.0,color=black];
+	Sault_St_Marie -- Toronto [ len=2, label=28, fontsize= 20,style=bold,penwidth=7.0,color=orange];
+	Montreal -- Toronto [ len=3, label=29, fontsize= 20,style=dotted,penwidth=3.0,color=grey];
+	Duluth -- Toronto [ len=6, label=30, fontsize= 20,style=dotted,penwidth=3.0,color=purple];
+	Montreal -- Boston [ len=2, label=31, fontsize= 20,style=bold,penwidth=7.0,color=yellow];
+	Boston -- New_York [ len=2, label=32, fontsize= 20,style=bold,penwidth=7.0,color=yellow];
+	Montreal -- New_York [ len=3, label=33, fontsize= 20,style=dotted,penwidth=3.0,color=blue];
+	New_York -- Washington [ len=2, label=34, fontsize= 20,style=bold,penwidth=7.0,color=orange];
+	Pittsburgh -- New_York [ len=2, label=35, fontsize= 20,style=bold,penwidth=7.0,color=red];
+	Toronto -- Pittsburgh [ len=2, label=36, fontsize= 20,style=bold,penwidth=7.0,color=red];
+	Chicago -- Pittsburgh [ len=3, label=37, fontsize= 20,style=dotted,penwidth=3.0,color=black];
+	Toronto -- Chicago [ len=4, label=38, fontsize= 20,style=dotted,penwidth=3.0,color=white];
+	Duluth -- Chicago [ len=3, label=39, fontsize= 20,style=dotted,penwidth=3.0,color=red];
+	Duluth -- Omaha [ len=2, label=40, fontsize= 20,style=bold,penwidth=7.0,color=green];
+	Omaha -- Chicago [ len=4, label=41, fontsize= 20,style=dotted,penwidth=3.0,color=blue];
+	Omaha -- Kansas_City [ len=1, label=42, fontsize= 20,style=bold,penwidth=7.0,color=yellow];
+	Denver -- Omaha [ len=4, label=43, fontsize= 20,style=dotted,penwidth=3.0,color=purple];
+	Helena -- Denver [ len=4, label=44, fontsize= 20,style=dotted,penwidth=3.0,color=green];
+	Denver -- Kansas_City [ len=4, label=45, fontsize= 20,style=dotted,penwidth=3.0,color=orange];
+	Denver -- Oklahoma_City [ len=4, label=46, fontsize= 20,style=dotted,penwidth=3.0,color=red];
+	Santa_Fe -- Oklahoma_City [ len=3, label=47, fontsize= 20,style=dotted,penwidth=3.0,color=blue];
+	El_Paso -- Oklahoma_City [ len=5, label=48, fontsize= 20,style=dotted,penwidth=3.0,color=yellow];
+	Oklahoma_City -- Dallas [ len=2, label=49, fontsize= 20,style=bold,penwidth=7.0,color=orange];
+	Dallas -- Houston [ len=1, label=50, fontsize= 20,style=bold,penwidth=7.0,color=orange];
+	El_Paso -- Houston [ len=6, label=51, fontsize= 20,style=dotted,penwidth=3.0,color=green];
+	El_Paso -- Dallas [ len=4, label=52, fontsize= 20,style=dotted,penwidth=3.0,color=red];
+	Houston -- New_Orleans [ len=2, label=53, fontsize= 20,style=bold,penwidth=7.0,color=red];
+	Oklahoma_City -- Little_Rock [ len=2, label=54, fontsize= 20,style=bold,penwidth=7.0,color=green];
+	Little_Rock -- Dallas [ len=2, label=55, fontsize= 20,style=bold,penwidth=7.0,color=green];
+	Kansas_City -- Saint_Louis [ len=2, label=56, fontsize= 20,style=dotted,penwidth=3.0,color=purple];
+	Chicago -- Saint_Louis [ len=2, label=57, fontsize= 20,style=dotted,penwidth=3.0,color=green];
+	Little_Rock -- Saint_Louis [ len=2, label=58, fontsize= 20,style=dotted,penwidth=3.0,color=grey];
+	Saint_Louis -- Nashville [ len=2, label=59, fontsize= 20,style=dotted,penwidth=3.0,color=grey];
+	Little_Rock -- Nashville [ len=3, label=60, fontsize= 20,style=dotted,penwidth=3.0,color=white];
+	Little_Rock -- New_Orleans [ len=3, label=61, fontsize= 20,style=dotted,penwidth=3.0,color=green];
+	New_Orleans -- Atlanta [ len=4, label=62, fontsize= 20,style=dotted,penwidth=3.0,color=yellow];
+	Atlanta -- Charleston [ len=2, label=63, fontsize= 20,style=dotted,penwidth=3.0,color=grey];
+	Charleston -- Miami [ len=4, label=64, fontsize= 20,style=dotted,penwidth=3.0,color=purple];
+	New_Orleans -- Miami [ len=6, label=65, fontsize= 20,style=dotted,penwidth=3.0,color=red];
+	Atlanta -- Miami [ len=6, label=66, fontsize= 20,style=dotted,penwidth=3.0,color=blue];
+	Raleigh -- Charleston [ len=2, label=67, fontsize= 20,style=dotted,penwidth=3.0,color=grey];
+	Nashville -- Raleigh [ len=2, label=68, fontsize= 20,style=dotted,penwidth=3.0,color=grey];
+	Nashville -- Raleigh [ len=3, label=69, fontsize= 20,style=dotted,penwidth=3.0,color=black];
+	Raleigh -- Washington [ len=2, label=70, fontsize= 20,style=dotted,penwidth=3.0,color=grey];
+	Washington -- Pittsburgh [ len=2, label=71, fontsize= 20,style=dotted,penwidth=3.0,color=grey];
+	Pittsburgh -- Raleigh [ len=2, label=72, fontsize= 20,style=dotted,penwidth=3.0,color=grey];
+	Pittsburgh -- Saint_Louis [ len=4, label=73, fontsize= 20,style=dotted,penwidth=3.0,color=yellow];
+	Pittsburgh -- Saint_Louis [ len=5, label=74, fontsize= 20,style=dotted,penwidth=3.0,color=green];
+	Helena -- Omaha [ len=5, label=75, fontsize= 20,style=dotted,penwidth=3.0,color=red];
+	Kansas_City -- Oklahoma_City [ len=2, label=76, fontsize= 20,style=dotted,penwidth=3.0,color=grey];
+	Nashville -- Atlanta [ len=1, label=77, fontsize= 20,style=bold,penwidth=7.0,color=yellow];
+}
