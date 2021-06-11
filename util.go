@@ -19,3 +19,10 @@ func itemExists(arrayType interface{}, item interface{}) bool {
 
 	return false
 }
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
