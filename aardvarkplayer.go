@@ -295,7 +295,7 @@ func (a* AardvarkPlayer) informStatus(trackStatus []int, faceUpCards []int) {
 	totalScore := float32(0)
 
 	for i:=0;i<a.constants.NumTracks;i++ {
-		if a.trackStatus[i]!=-1 {
+		if a.trackStatus[i]!=-1 || a.myTrains < a.trackList[i].length {
 			a.trackScores[i]=0
 		}
 		totalScore += a.trackScores[i]
@@ -325,6 +325,15 @@ func (a* AardvarkPlayer) askTrackLay() (int, GameColor){
 	if !canLay {
 		panic("I THOUGHT I COULD LAY THIS TRACK BUT I CANT")
 	}
+
+	if a.trackList[a.lastChosentrack].length>a.myTrainCards[c]{
+		a.myTrainCards[Rainbow]-= a.trackList[a.lastChosentrack].length-a.myTrainCards[c]
+		a.myTrainCards[c]=0
+	} else{
+		a.myTrainCards[c]-=a.trackList[a.lastChosentrack].length
+	}
+	a.myTrains-=a.trackList[a.lastChosentrack].length
+
 	return a.lastChosentrack, c
 } //ask this player which track he wants to lay, and with what color
 
