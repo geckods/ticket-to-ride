@@ -17,11 +17,21 @@ import (
 //  i.e. if you can place it, place it, else if you can't, pick up the right card for it
 
 const UintSize = 32 << (^uint(0) >> 32 & 1) // 32 or 64
-const longerPathMultiplier = 1.0
-const destinationTicketMultiplier = 1.0
-const trackBonusMultiplier = 1.0
+
+//related to computation of dt scores
+const longerPathMultiplier = 0.5
+const pathDenominatorPower = 5.0
+
+// related to computation of difficulty scores
 const valueOfCardOnTable = 0.5
-const difficultyOfGettingMultiplier = 0.9
+const difficultyOfGettingBase = 0.9
+
+//related to merging the three metrics
+const destinationTicketMultiplier = 1.0
+const trackBonusMultiplier = 0.0
+const difficultyOfGettingMultiplier = 0.0
+
+// related to later optimization
 const constantForRepeat = 1
 
 
@@ -42,7 +52,7 @@ type AardvarkPlayer struct {
 	constants GameConstants
 
 	adjacencyList [][]int
-	trackScores []float32
+	trackScores []float64
 
 	lastChosentrack int
 }
@@ -94,15 +104,21 @@ func(a *AardvarkPlayer) getEdgeDistancesFromTarget(d Destination, otherTarget De
 	}
 	dist[d]=0
 
+	//zap.S().Debug(dist)
+
 	for numIter:=0;numIter<a.constants.NumDestinations;numIter++ {
 		cheapestUnseen := -1
 		cheapestVal := MaxInt
 		for i,val := range dist {
-			if val<cheapestVal {
+			if val<=cheapestVal && !seen[i] {
 				cheapestVal=val
 				cheapestUnseen=i
 			}
 		}
+
+		//zap.S().Debug(seen)
+		//zap.S().Debug(seen[33],destinationNames[33])
+		//zap.S().Debug(numIter,cheapestUnseen, cheapestVal, a.constants.NumDestinations)
 
 		seen[cheapestUnseen]=true
 
@@ -118,6 +134,8 @@ func(a *AardvarkPlayer) getEdgeDistancesFromTarget(d Destination, otherTarget De
 			}
 		}
 	}
+
+	//zap.S().Debug(dist)
 
 	edgeDistances := make([]int,a.constants.NumTracks)
 
@@ -198,14 +216,14 @@ func(a *AardvarkPlayer) getEdgeDistancesFromTarget(d Destination, otherTarget De
 	//return edgeDistances
 }
 
-func (a *AardvarkPlayer) getDTscore(dt DestinationTicket) []float32{
+func (a *AardvarkPlayer) getDTscore(dt DestinationTicket) []float64{
 	edgeDistances1,ok := a.getEdgeDistancesFromTarget(dt.d1, dt.d2)
 	if !ok {
-		return make([]float32, a.constants.NumTracks)
+		return make([]float64, a.constants.NumTracks)
 	}
 	edgeDistances2,ok := a.getEdgeDistancesFromTarget(dt.d2, dt.d1)
 	if !ok {
-		return make([]float32, a.constants.NumTracks)
+		return make([]float64, a.constants.NumTracks)
 	}
 	edgeDistanceSum := make([]int, a.constants.NumTracks)
 	sumItems := make(map[int][]int)
@@ -225,41 +243,47 @@ func (a *AardvarkPlayer) getDTscore(dt DestinationTicket) []float32{
 
 	sort.Ints(uniqueValues)
 
-	ans := make([]float32, a.constants.NumTracks)
+	ans := make([]float64, a.constants.NumTracks)
 
-	initialMultiplier := float32(1.0)
+	initialMultiplier := 1.0
 
 	for _,val := range uniqueValues {
 		for _,edge := range sumItems[val] {
-			ans[edge]=initialMultiplier/float32(val+1)
+			//zap.S().Debug(val,edge)
+			ans[edge]=initialMultiplier/ math.Pow(float64(val+1), pathDenominatorPower)
 		}
 		initialMultiplier *= longerPathMultiplier
 	}
 
+	//zap.S().Debug(dt)
+	//zap.S().Debug(edgeDistanceSum)
+	//zap.S().Debug(ans)
+	//bufio.NewReader(os.Stdin).ReadBytes('\n')
+
 	return ans
 }
 
-func (a* AardvarkPlayer) difficultyOfGettingTrack(trid int) float32{
-	ans := float32(a.trackList[trid].length)
+func (a* AardvarkPlayer) difficultyOfGettingTrack(trid int) float64{
+	ans := float64(a.trackList[trid].length)
 	if a.trackList[trid].c == Other {
-		maxVal := float32(0.0)
-		temp := float32(0.0)
+		maxVal := 0.0
+		temp := 0.0
 		for _,c := range listOfGameColors {
 			temp=0
-			temp += float32(a.myTrainCards[c])
-			temp += float32(a.myTrainCards[Rainbow])
-			temp += valueOfCardOnTable*float32(a.faceUpCards[c])
-			temp += valueOfCardOnTable*float32(a.faceUpCards[Rainbow])
-			maxVal = float32(math.Max(float64(maxVal), float64(temp)))
+			temp += float64(a.myTrainCards[c])
+			temp += float64(a.myTrainCards[Rainbow])
+			temp += valueOfCardOnTable*float64(a.faceUpCards[c])
+			temp += valueOfCardOnTable*float64(a.faceUpCards[Rainbow])
+			maxVal = math.Max(maxVal, temp)
 		}
 		ans-=maxVal
 	} else {
-		ans -= float32(a.myTrainCards[a.trackList[trid].c])
-		ans -= float32(a.myTrainCards[Rainbow])
-		ans -= valueOfCardOnTable*float32(a.faceUpCards[a.trackList[trid].c])
-		ans -= valueOfCardOnTable*float32(a.faceUpCards[Rainbow])
+		ans -= float64(a.myTrainCards[a.trackList[trid].c])
+		ans -= float64(a.myTrainCards[Rainbow])
+		ans -= valueOfCardOnTable*float64(a.faceUpCards[a.trackList[trid].c])
+		ans -= valueOfCardOnTable*float64(a.faceUpCards[Rainbow])
 	}
-	ans = float32(math.Max(float64(ans), 0.0))
+	ans = math.Max(ans, 0.0)
 	return ans
 }
 
@@ -267,45 +291,62 @@ func (a* AardvarkPlayer) informStatus(trackStatus []int, faceUpCards []int) {
 	a.faceUpCards=faceUpCards
 	a.trackStatus=trackStatus
 
-	a.trackScores = make([]float32,a.constants.NumTracks)
+	a.trackScores = make([]float64,a.constants.NumTracks)
+	destinationTicketScores := make([]float64,a.constants.NumTracks)
+	trackLengthScores := make([]float64,a.constants.NumTracks)
+	trackDifficultyScores := make([]float64,a.constants.NumTracks)
 
-	//	first, for each destination ticket, let's compute a score and add that to the current score
+	//	first, for each destination ticket, let's compute dt score
 	for _,dt := range a.myDestinationTickets {
 		thisDtScore := a.getDTscore(dt)
 		for i:=0;i<a.constants.NumTracks;i++ {
-			a.trackScores[i]+=destinationTicketMultiplier*thisDtScore[i]*float32(dt.points)*2.0
+			destinationTicketScores[i]+=thisDtScore[i]*float64(dt.points)
 		}
 	}
 
-	// add the score for building the road
+	// compute the score for building the track
 	for i:=0;i<a.constants.NumTracks;i++ {
-		a.trackScores[i]+=trackBonusMultiplier*float32(a.constants.routeLengthScores[a.trackList[i].length])
+		if a.trackStatus[i] == -1 {
+			trackLengthScores[i]=float64(a.constants.routeLengthScores[a.trackList[i].length])
+		}
 	}
 
-	//	divide score based on difficulty to get that card
+	// compute the score based on difficulty of getting
 	for i:=0;i<a.constants.NumTracks;i++ {
-		a.trackScores[i]*=float32(math.Pow(difficultyOfGettingMultiplier, float64(a.difficultyOfGettingTrack(i))))
+		if a.trackStatus[i]==-1 {
+			trackDifficultyScores[i]= math.Pow(difficultyOfGettingBase, a.difficultyOfGettingTrack(i))
+		}
 	}
 
-	if a.lastChosentrack != -1 {
-		a.trackScores[a.lastChosentrack]+=constantForRepeat
+	//normalize the three computed scores
+	normalizeFloatSlice(&destinationTicketScores)
+	normalizeFloatSlice(&trackLengthScores)
+	normalizeFloatSlice(&trackDifficultyScores)
+
+	// merge the three computed scores
+	for i:=0;i<a.constants.NumTracks;i++ {
+		a.trackScores[i] = destinationTicketScores[i]*destinationTicketMultiplier + trackLengthScores[i]*trackBonusMultiplier + trackDifficultyScores[i]*difficultyOfGettingMultiplier
+	}
+
+	//for benefitting repeats
+	if a.lastChosentrack != -1 && a.lastChosentrack != a.constants.NumTracks {
+		a.trackScores[a.lastChosentrack]*=constantForRepeat
 	}
 
 	//set to 0 for blocked tracks
-	totalScore := float32(0)
-
 	for i:=0;i<a.constants.NumTracks;i++ {
 		if a.trackStatus[i]!=-1 || a.myTrains < a.trackList[i].length {
 			a.trackScores[i]=0
 		}
-		totalScore += a.trackScores[i]
 	}
+	normalizeFloatSlice(&a.trackScores)
 
-	//	make it so that sum is One
-	for i:=0;i<a.constants.NumTracks;i++ {
-		a.trackScores[i]/=totalScore
-	}
-
+	//if a.myNumber == 0 {
+	//	for i,score := range a.trackScores {
+	//		zap.S().Debug(i,score)
+	//	}
+	//	bufio.NewReader(os.Stdin).ReadBytes('\n')
+	//}
 }
 
 func (a* AardvarkPlayer) informCardPickup(int, GameColor) {
@@ -361,9 +402,9 @@ func (a* AardvarkPlayer) canILayThisTrack(trid int) (bool, GameColor) {
 
 func (a* AardvarkPlayer) askMove() int{
 	//	in an askMove, we should have already filled trackScores, so here we just randomly sample from the distribution
-	randomNumber := rand.Float32()
+	randomNumber := rand.Float64()
 	selector := 0
-	cumulativeProbability := float32(0)
+	cumulativeProbability := float64(0)
 	for ;selector<a.constants.NumTracks;selector++ {
 		cumulativeProbability += a.trackScores[selector]
 		if cumulativeProbability>=randomNumber {
@@ -371,11 +412,20 @@ func (a* AardvarkPlayer) askMove() int{
 		}
 	}
 
-	if selector >= a.constants.NumTracks || a.trackStatus[selector]!=-1 {
+	//if selector
+
+	if selector < a.constants.NumTracks && a.trackStatus[selector]!=-1 {
+		//zap.S().Debug(selector,randomNumber)
+		//zap.S().Debug(a.trackScores)
 		panic("SOMETHING BAD HAPPENED")
 	}
 
 	a.lastChosentrack = selector
+
+	if a.lastChosentrack == a.constants.NumTracks {
+		return 0
+	}
+	//This case can theoretically arise when a player has exactly 3 train cars left and no routes of length 3 or less are available
 
 	canLay,_ := a.canILayThisTrack(a.lastChosentrack)
 
@@ -387,6 +437,11 @@ func (a* AardvarkPlayer) askMove() int{
 } //Ask the player what move he wants to do: 0 is pick up cards, 1 is place Tracks, 2 is pick destination ticket
 
 func (a* AardvarkPlayer) askPickup(howManyLeft int, faceUpCards []int) GameColor {
+
+	if a.lastChosentrack == a.constants.NumTracks {
+		return Other
+	}
+
 	a.faceUpCards = faceUpCards
 	canLayTrack, c := a.canILayThisTrack(a.lastChosentrack)
 	if canLayTrack && howManyLeft == 2 {
