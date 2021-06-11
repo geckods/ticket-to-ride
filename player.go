@@ -5,7 +5,7 @@ type Player interface {
 
 	//players are stateful, so we may need to inform them of game events (in case they want to keep track of other players' hands or something)
 	informCardPickup(int, GameColor)   //inform this player that a player picked up a card of given color
-	informTrackLay(int, Track)         //inform this player that a player placed a track
+	informTrackLay(int, int)         //inform this player that a player placed a track
 	informDestinationTicketPickup(int) //inform this player that a player picked up a destination card
 
 	informStatus([]int, []int) //called to inform the playstate before their turn
