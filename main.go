@@ -108,9 +108,7 @@ func main() {
 		NumDestinations:                     NUMDESTINATIONS,
 		routeLengthScores:                   routeLengthScores,
 	}
-	_ = constants
 	e := Engine{}
-	_ = e
 	players := make([]Player, 0)
 	player1 := AardvarkPlayer{}
 	players = append(players, &player1)
