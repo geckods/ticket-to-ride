@@ -191,7 +191,7 @@ func (e *Engine) populateAdjacencyList() {
 func (e *Engine) initializeGame(playerList []Player, constants GameConstants) {
 
 	//TODO: some of these things refer to global variables, ideally we don't want that, everything can be a parameter
-	e.OptimizerMode = false
+	//e.OptimizerMode = false
 	e.falseMoveCount = 0
 
 	e.playerList = playerList
@@ -266,7 +266,11 @@ func (e *Engine) runCollectionPhase() bool {
 		}
 	}
 
-		whichColor := e.playerList[e.activePlayer].askPickup(2, e.faceUpTrainCards)
+	//fmt.Println(e.pileOfTrainCards)
+	//fmt.Println(e.discardPileOfTrainCards)
+	//fmt.Println(e.OptimizerMode)
+
+	whichColor := e.playerList[e.activePlayer].askPickup(2, e.faceUpTrainCards)
 	if whichColor != Other {
 		//	he wants a faceup card
 		if e.faceUpTrainCards[whichColor] <= 0 {
@@ -292,6 +296,11 @@ func (e *Engine) runCollectionPhase() bool {
 			return false
 		}
 	}
+
+	//zap.S().Info(e.pileOfTrainCards)
+	//zap.S().Info(e.discardPileOfTrainCards)
+	//fmt.Println(e.pileOfTrainCards)
+	//fmt.Println(e.discardPileOfTrainCards)
 
 
 	whichColor = e.playerList[e.activePlayer].askPickup(1, e.faceUpTrainCards)
@@ -499,6 +508,8 @@ func (e *Engine) runSingleTurn() bool {
 		// let him pick up cards
 		if !e.runCollectionPhase(){
 			e.falseMoveCount++
+		} else {
+			e.falseMoveCount = 0
 		}
 	} else if whichMove == 1 {
 		//ask them to put down some tracks
