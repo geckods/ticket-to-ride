@@ -26,11 +26,11 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	//GA stuff
-	toLog = new(bool)
-	consoleView = new(bool)
-	toUseVisualizer = new(bool)
-	toGenerateGraphs = false
-	optimizeBeaverParametersWithGeneticAlgorithm()
+	//toLog = new(bool)
+	//consoleView = new(bool)
+	//toUseVisualizer = new(bool)
+	//toGenerateGraphs = false
+	//optimizeBeaverParametersWithGeneticAlgorithm()
 
 
 	//command line flags
@@ -130,16 +130,22 @@ func main() {
 
 	//These are for BeaverPlayer NEW, with sampling code
 	//This is equal to AardvardPlayer: {0.5, 0.5, 0.1, 0.18, 1, 0.1, 0.001, 0.01,0.1}
+	//{0.48179801353843693, 0.7, 0.14621819593735766 ,0.030177017178349315, 0.7362757503240934, 0.8041609718224826, 0.031657202511261404, 0.4788249209903217, 1} : This one seems pretty strong, it accumulates cards early and aggressively builds midgame, and focuses on long roads when it fails to connect its destinations. I think it's a strat that can be countered by a bunch of bots that spam roads early. Strongest strat I have ATM
+	//	{0.65, 0.5, 0.5613935345478703, 0.014786738417391164, 0.2636930125458408, 0.048999999999999995, 0.000637, 0.7, 0.7835672711986463} //this one also seems pretty high level
+	// {0.44454935033352205 ,0.5 ,0.107653, 0.010350716892173813, 0.8450304277220828, 0.08914744929999999, 0.00013917876699999997, 0.2525800021749184, 1} //this one is even stronger, and it starts early as well, doesn't hoard as long
 	e := Engine{}
 	players := make([]Player, 0)
 	player1 := BeaverPlayer{}
-	player1.setScoringParameters([]float64{0.5, 0.5, 0.1, 0.18, 1, 0.1, 0.001, 0.01,0.1})
+	player1.setScoringParameters([]float64{0.44454935033352205 ,0.5 ,0.107653, 0.010350716892173813, 0.8450304277220828, 0.08914744929999999, 0.00013917876699999997, 0.2525800021749184, 1})
 	players = append(players, &player1)
-	player2 := AardvarkPlayer{}
+	player2 := BeaverPlayer{}
+	player2.setScoringParameters([]float64{0.65, 0.5, 0.5613935345478703, 0.014786738417391164, 0.2636930125458408, 0.048999999999999995, 0.000637, 0.7, 0.7835672711986463})
 	players = append(players, &player2)
-	player3 := BasicPlayer{}
+	player3 := AardvarkPlayer{}
+	//player3.setScoringParameters([]float64{0.65, 0.5, 0.5613935345478703, 0.014786738417391164, 0.2636930125458408, 0.048999999999999995, 0.000637, 0.7, 0.7835672711986463})
 	players = append(players, &player3)
-	player4 := BasicPlayer{}
+	player4 := AardvarkPlayer{}
+	//player4.setScoringParameters([]float64{0.65, 0.5, 0.5613935345478703, 0.014786738417391164, 0.2636930125458408, 0.048999999999999995, 0.000637, 0.7, 0.7835672711986463})
 	players = append(players, &player4)
 
 	if *toUseVisualizer {
