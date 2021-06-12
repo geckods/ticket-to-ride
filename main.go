@@ -25,6 +25,14 @@ func main() {
 	//seed random number generator
 	rand.Seed(time.Now().UTC().UnixNano())
 
+	// GA stuff
+	toLog = new(bool)
+	consoleView = new(bool)
+	toUseVisualizer = new(bool)
+	toGenerateGraphs = false
+	optimizeBeaverParametersWithGeneticAlgorithm()
+
+
 	//command line flags
 	toLog = flag.Bool("log", false, "Whether or not to log the operation of the engine. (default false)")
 	consoleView = flag.Bool("console", true, "Whether to log the operation to console or to file. (default true, to console)")
@@ -108,9 +116,14 @@ func main() {
 		NumDestinations:                     NUMDESTINATIONS,
 		routeLengthScores:                   routeLengthScores,
 	}
+
+	//{0.046012701338462726, 0.8234722509035575, 0.8661244141006816, 0.5790593293832864, 0.9077195653391886, 0.8283225125248498, 0.18343344230131683, 0.19529733461220988}
+	//{0.18292491645390843, 0.4283570818068078, 0.8969919575618727, 0.6826534880132438, 0.9789293555766876, 0.9222122589217269, 0.09083727535388708, 0.4931419977048804}
+
 	e := Engine{}
 	players := make([]Player, 0)
-	player1 := AardvarkPlayer{}
+	player1 := BeaverPlayer{}
+	player1.setScoringParameters([]float64{0.18292491645390843, 0.4283570818068078, 0.8969919575618727, 0.6826534880132438, 0.9789293555766876, 0.9222122589217269, 0.09083727535388708, 0.4931419977048804})
 	players = append(players, &player1)
 	player2 := AardvarkPlayer{}
 	players = append(players, &player2)
