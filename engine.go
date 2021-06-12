@@ -676,7 +676,7 @@ func (e *Engine) logPlayerScore(i,sc int) {
 
 func (e *Engine) determineWinners() []int {
 	winners := make([]int, 0)
-	currBestScore := 0
+	currBestScore := -1000000
 
 	//figure out which player(s) have longest paths
 	longestPathPlayers := e.getLongestPathPlayers()
@@ -695,6 +695,11 @@ func (e *Engine) determineWinners() []int {
 			winners = append(winners, i)
 		}
 	}
+
+	if len(winners) == 0 {
+		panic("WTF")
+	}
+
 	return winners
 }
 
