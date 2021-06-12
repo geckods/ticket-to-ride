@@ -7,6 +7,8 @@ import (
 )
 
 //	beaverPlayer is gonna be a copy of aardvarkPlayer, but with score parameters passable through a function, to suit GA based optimization
+// I spent a lot of time on GA w/ just these params, and it was only ever as good as aadrvarkplayer, not better.
+// So instead, the strat now is going to be to sample from the probability distibution X times, and play the majority move.
 
 //related to computation of dt scores
 const longerPathMultiplierMin = 0.0
@@ -36,6 +38,10 @@ const difficultyOfGettingMultiplierMax = 1.0
 const constantForRepeatMin = 0.0
 const constantForRepeatMax = 100.0
 
+// related to number of samples
+const sampleNumberMin = 1.0
+const sampleNumberMax = 101.0
+
 
 type BeaverPlayer struct {
 	trackList []Track //my copy of the board
@@ -52,6 +58,7 @@ type BeaverPlayer struct {
 	trackScores []float64
 
 	lastChosentrack int
+	chosenMove int
 
 	//related to computation of dt scores
 	longerPathMultiplier float64
@@ -68,6 +75,8 @@ type BeaverPlayer struct {
 
 	// related to later optimization
 	constantForRepeat float64
+
+	sampleNumber int
 }
 
 func (b *BeaverPlayer) populateAdjacencyList() {
@@ -99,6 +108,8 @@ func (b *BeaverPlayer) setScoringParameters(inputs [] float64) {
 
 	// related to later optimization
 	b.constantForRepeat = scaleFloat(inputs[7], constantForRepeatMin, constantForRepeatMax)
+
+	b.sampleNumber = int(math.Floor(scaleFloat(inputs[8], sampleNumberMin, sampleNumberMax)))
 }
 
 func (b * BeaverPlayer) initialize(myNumber int, trackList []Track,adjList [][]int, constants GameConstants) {
@@ -265,10 +276,13 @@ func (b * BeaverPlayer) informStatus(trackStatus []int, faceUpCards []int) {
 	//	first, for each destination ticket, let's compute dt score
 	for _,dt := range b.myDestinationTickets {
 		thisDtScore := b.getDTscore(dt)
+		//fmt.Println(thisDtScore)
 		for i:=0;i< b.constants.NumTracks;i++ {
 			destinationTicketScores[i]+=thisDtScore[i]*float64(dt.points)
 		}
 	}
+
+	//fmt.Println("Finally", destinationTicketScores)
 
 	// compute the score for building the track
 	for i:=0;i< b.constants.NumTracks;i++ {
@@ -289,15 +303,24 @@ func (b * BeaverPlayer) informStatus(trackStatus []int, faceUpCards []int) {
 	normalizeFloatSlice(&trackLengthScores)
 	normalizeFloatSlice(&trackDifficultyScores)
 
+	//fmt.Println("Point 1", b.trackScores)
+	//fmt.Println("Point 1 dt", destinationTicketScores)
+
+
 	// merge the three computed scores
 	for i:=0;i< b.constants.NumTracks;i++ {
 		b.trackScores[i] = destinationTicketScores[i]*b.destinationTicketMultiplier + trackLengthScores[i]*b.trackBonusMultiplier + trackDifficultyScores[i]*b.difficultyOfGettingMultiplier
 	}
 
+	//fmt.Println("Point 2", b.trackScores)
+
 	//for benefitting repeats
 	if b.lastChosentrack != -1 && b.lastChosentrack != b.constants.NumTracks {
 		b.trackScores[b.lastChosentrack]*=b.constantForRepeat
 	}
+
+	//fmt.Println("Point 3", b.trackScores)
+
 
 	//set to 0 for blocked tracks
 	for i:=0;i< b.constants.NumTracks;i++ {
@@ -306,6 +329,10 @@ func (b * BeaverPlayer) informStatus(trackStatus []int, faceUpCards []int) {
 		}
 	}
 	normalizeFloatSlice(&b.trackScores)
+
+	//fmt.Println("Point 4", b.trackScores)
+
+	//fmt.Println("HI", b.trackScores, b.trackScores[0] == )
 
 	//if b.myNumber == 0 {
 	//	for i,score := range b.trackScores {
@@ -366,53 +393,78 @@ func (b * BeaverPlayer) canILayThisTrack(trid int) (bool, GameColor) {
 	return false, bestColor
 }
 
+func (b *BeaverPlayer) getBestMoveForTrack(trid int) int {
+	canLay, c := b.canILayThisTrack(trid)
+	if canLay {
+		return trid
+	} else {
+		return b.constants.NumTracks + int(c)
+	}
+}
+
 func (b * BeaverPlayer) askMove() int{
 	//	in an askMove, we should have already filled trackScores, so here we just randomly sample from the distribution
-	randomNumber := rand.Float64()
-	selector := 0
-	cumulativeProbability := float64(0)
-	for ;selector< b.constants.NumTracks;selector++ {
-		cumulativeProbability += b.trackScores[selector]
-		if cumulativeProbability>=randomNumber {
-			break
+	// randomly sample sampleNumber times
+
+	sampleResults := make(map[int]int)
+	bestSampleCount := 0
+
+
+	for i:=0;i<b.sampleNumber;i++ {
+		randomNumber := rand.Float64()
+		selector := 0
+		cumulativeProbability := float64(0)
+		for ;selector< b.constants.NumTracks;selector++ {
+			cumulativeProbability += b.trackScores[selector]
+			if cumulativeProbability>=randomNumber {
+				break
+			}
+		}
+
+		if selector < b.constants.NumTracks && b.trackStatus[selector]!=-1 {
+			//zap.S().Debug(selector,randomNumber)
+			//zap.S().Debug(b.trackScores)
+			panic("SOMETHING BAD HAPPENED")
+		}
+
+		theMove := 0
+		if selector == b.constants.NumTracks {
+			theMove = b.constants.NumTracks
+			//sum := 0.0
+			//for _,x := range b.trackScores {
+			//	sum += x
+			//}
+			//fmt.Println(sum, b.myTrains)
+			//panic("WUT")
+		} else {
+			theMove = b.getBestMoveForTrack(selector)
+		}
+		sampleResults[theMove]++
+		bestSampleCount = max(bestSampleCount, sampleResults[theMove])
+	}
+
+	//fmt.Println(b.sampleNumber, bestSampleCount, b.myTrains)
+
+	//if selector
+	moveselectionSlice := make([]int, 0)
+	for i := range sampleResults {
+		if sampleResults[i] == bestSampleCount {
+			moveselectionSlice = append(moveselectionSlice,i)
 		}
 	}
 
-	//if selector
-
-	if selector < b.constants.NumTracks && b.trackStatus[selector]!=-1 {
-		//zap.S().Debug(selector,randomNumber)
-		//zap.S().Debug(b.trackScores)
-		panic("SOMETHING BAD HAPPENED")
-	}
-
-	b.lastChosentrack = selector
-
-	if b.lastChosentrack == b.constants.NumTracks {
-		return 0
-	}
-	//This case can theoretically arise when b player has exactly 3 train cars left and no routes of length 3 or less are available
-
-	canLay,_ := b.canILayThisTrack(b.lastChosentrack)
-
-	if canLay {
+	b.chosenMove = moveselectionSlice[rand.Intn(len(moveselectionSlice))]
+	if b.chosenMove < b.constants.NumTracks {
+		b.lastChosentrack = b.chosenMove
 		return 1
 	} else {
 		return 0
 	}
+
 } //Ask the player what move he wants to do: 0 is pick up cards, 1 is place Tracks, 2 is pick destination ticket
 
 func (b * BeaverPlayer) askPickup(howManyLeft int, faceUpCards []int) GameColor {
-
-	if b.lastChosentrack == b.constants.NumTracks {
-		return Other
-	}
-
-	b.faceUpCards = faceUpCards
-	canLayTrack, c := b.canILayThisTrack(b.lastChosentrack)
-	if canLayTrack && howManyLeft == 2 {
-		panic("I thought I couldn't lay this track but I can")
-	}
+	c := GameColor(b.chosenMove - b.constants.NumTracks)
 	if b.faceUpCards[c] > 0 {
 		return c
 	}
