@@ -261,7 +261,7 @@ func (e *Engine) runCollectionPhase() bool {
 
 	if e.OptimizerMode {
 		//	want to avoid panics in optimizer mode, so we don't let the player draw if the pile is empty
-		if len(e.pileOfTrainCards) == 0 {
+		if len(e.pileOfTrainCards) == 0 && len(e.discardPileOfTrainCards) == 0{
 			return false
 		}
 	}
@@ -288,7 +288,7 @@ func (e *Engine) runCollectionPhase() bool {
 
 	if e.OptimizerMode {
 		//	want to avoid panics in optimizer mode, so we don't let the player draw if the pile is empty
-		if len(e.pileOfTrainCards) == 0 {
+		if len(e.pileOfTrainCards) == 0 && len(e.discardPileOfTrainCards) == 0 {
 			return false
 		}
 	}
