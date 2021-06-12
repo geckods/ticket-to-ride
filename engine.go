@@ -224,7 +224,7 @@ func (e *Engine) initializeGame(playerList []Player, constants GameConstants) {
 
 
 	for i, p := range e.playerList {
-		p.initialize(i, e.trackList, e.gameConstants)
+		p.initialize(i, e.trackList,e.adjacencyList, e.gameConstants)
 		//	initialize each player
 	}
 
