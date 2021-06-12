@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
-	"go.uber.org/zap"
+	"log"
 	"math/rand"
 	"os"
 )
 
 const beaverIndividualSize = 8
-const numGamesInTournament = 100
+const numGamesInTournament = 10
 
 type individual []float64
 
@@ -54,42 +54,60 @@ func (g* GA_Beaver) fillInParameters(filename string) {
 	fmt.Fscanf(file, "%d\n%lf\n%lf", &g.populationSize, &g.crossoverRate, &g.mutateRate)
 }
 
+func (g* GA_Beaver) safeGame(e* Engine, c *GameConstants, players *[]Player) []int{
+	//fmt.Println("AM HERE")
+	toReturn := []int{-1}
+	defer func() {
+		if r:= recover();r!=nil {
+			//fmt.Println("Recovering")
+			toReturn = []int{-1}
+		}
+	}()
+	toReturn = e.runGame(*players,*c)
+	return toReturn
+}
+
 func (g* GA_Beaver) tournament(inds [4]individual) int{
-	constants := GameConstants{
-		NumColorCards:                       NUMCOLORCARDS,
-		NumRainbowCards:                     NUMRAINBOWCARDS,
-		NumStartingTrains:                   NUMSTARTINGTRAINS,
-		NumFaceUpTrainCards:                 NUMFACEUPTRAINCARDS,
-		NumGameColors:                       NUMGAMECOLORS,
-		NumInitialTrainCardsDealt:           NUMINITIALTRAINCARDSDEALT,
-		NumInitialDestinationTicketsOffered: NUMINITIALDESTINATIONTICKETSOFFERED,
-		NumInitialDestinationTicketsPicked:  NUMINITIALDESTINATIONTICKETSPICKED,
-		NumDestinationTicketsOffered:        NUMDESTINATIONTICKETSOFFERED,
-		NumDestinationTicketsPicked:         NUMDESTINATIONTICKETSPICKED,
-		LongestPathScore:                    LONGESTPATHSCORE,
-		NumPlayers:                          0,
-		NumTracks:                           0,
-		NumDestinations:                     NUMDESTINATIONS,
-		routeLengthScores:                   routeLengthScores,
-	}
-	e := Engine{}
-	players := make([]Player, 0)
-	player1 := BeaverPlayer{}
-	player1.setScoringParameters(inds[0])
-	players = append(players, &player1)
-	player2 := BeaverPlayer{}
-	player2.setScoringParameters(inds[1])
-	players = append(players, &player2)
-	player3 := BeaverPlayer{}
-	player3.setScoringParameters(inds[2])
-	players = append(players, &player3)
-	player4 := BeaverPlayer{}
-	player4.setScoringParameters(inds[3])
-	players = append(players, &player4)
 
 	scores := make([]int, 4)
 	for i:=0;i<numGamesInTournament;i++ {
-		winners := e.runGame(players, constants)
+
+		constants := GameConstants{
+			NumColorCards:                       NUMCOLORCARDS,
+			NumRainbowCards:                     NUMRAINBOWCARDS,
+			NumStartingTrains:                   NUMSTARTINGTRAINS,
+			NumFaceUpTrainCards:                 NUMFACEUPTRAINCARDS,
+			NumGameColors:                       NUMGAMECOLORS,
+			NumInitialTrainCardsDealt:           NUMINITIALTRAINCARDSDEALT,
+			NumInitialDestinationTicketsOffered: NUMINITIALDESTINATIONTICKETSOFFERED,
+			NumInitialDestinationTicketsPicked:  NUMINITIALDESTINATIONTICKETSPICKED,
+			NumDestinationTicketsOffered:        NUMDESTINATIONTICKETSOFFERED,
+			NumDestinationTicketsPicked:         NUMDESTINATIONTICKETSPICKED,
+			LongestPathScore:                    LONGESTPATHSCORE,
+			NumPlayers:                          0,
+			NumTracks:                           0,
+			NumDestinations:                     NUMDESTINATIONS,
+			routeLengthScores:                   routeLengthScores,
+		}
+		e := Engine{}
+		players := make([]Player, 0)
+		player1 := BeaverPlayer{}
+		player1.setScoringParameters(inds[0])
+		players = append(players, &player1)
+		player2 := BeaverPlayer{}
+		player2.setScoringParameters(inds[1])
+		players = append(players, &player2)
+		player3 := BeaverPlayer{}
+		player3.setScoringParameters(inds[2])
+		players = append(players, &player3)
+		player4 := BeaverPlayer{}
+		player4.setScoringParameters(inds[3])
+		players = append(players, &player4)
+
+		winners := g.safeGame(&e,&constants,&players)
+		if e := recover();e != nil {
+
+		}
 		for _,winner := range winners {
 			scores[winner]++
 		}
@@ -111,19 +129,26 @@ func (g* GA_Beaver) tournament(inds [4]individual) int{
 }
 
 func (g* GA_Beaver) selectRandomFromFourWayTournament() int{
-	ints := make([]int,0)
+	ints := make([]int,4)
 	ints[0] = rand.Intn(g.populationSize)
 	ints[1] = rand.Intn(g.populationSize)
 	ints[2] = rand.Intn(g.populationSize)
 	ints[3] = rand.Intn(g.populationSize)
 	inds := [4]individual{g.population[ints[0]],g.population[ints[1]],g.population[ints[2]],g.population[ints[3]]}
-	return ints[g.tournament(inds)]
+	winner := g.tournament(inds)
+	if winner==-1 {
+		return 0
+	}
+	return ints[winner]
 }
 
 func optimizeBeaverParametersWithGeneticAlgorithm() {
 	g := GA_Beaver{}
 	g.fillInParameters("gaparams.txt")
 	//TODO: seeding
+	g.population = append(g.population, individual{0.5,0.5,0.1,0.18,1,0.1,0,0.01})
+	g.population = append(g.population, individual{0.5,0.5,0.1,0.18,1,0.1,0,0.01})
+
 	for len(g.population) < g.populationSize {
 		g.population = append(g.population,g.randomIndividual())
 	}
@@ -134,6 +159,7 @@ func optimizeBeaverParametersWithGeneticAlgorithm() {
 		//TODO: add elitism
 		newPopulation := make([]individual, 0)
 		for len(newPopulation)<g.populationSize {
+			//fmt.Println(len(newPopulation))
 			parent1 := make(individual, beaverIndividualSize)
 			parent2 := make(individual, beaverIndividualSize)
 			copy(parent1,g.population[g.selectRandomFromFourWayTournament()])
@@ -147,9 +173,18 @@ func optimizeBeaverParametersWithGeneticAlgorithm() {
 		g.population = newPopulation
 
 		iterationNumber++
-		if iterationNumber%100 == 0 {
-			zap.S().Info("Iteration Number", iterationNumber)
-			zap.S().Info("Population", g.population)
+		fmt.Println(iterationNumber)
+		if iterationNumber%20 == 0 {
+			file, err := os.OpenFile("garesults.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			//defer file.Close()
+			if err != nil {
+				log.Fatal(err)
+			}
+			for _,ind := range g.population {
+				fmt.Fprint(file,ind)
+				fmt.Fprint(file, "\n")
+			}
+			file.Close()
 		}
 	}
 
