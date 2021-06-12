@@ -12,7 +12,7 @@ type BasicPlayer struct {
 	constants GameConstants
 }
 
-func (b* BasicPlayer) initialize(myNumber int, trackList []Track, constants GameConstants) {
+func (b* BasicPlayer) initialize(myNumber int, trackList []Track, adjList [][]int, constants GameConstants) {
 	b.myNumber = myNumber
 	b.trackList = trackList
 	b.constants = constants
