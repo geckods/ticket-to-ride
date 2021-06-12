@@ -56,13 +56,14 @@ func (g* GA_Beaver) fillInParameters(filename string) {
 
 func (g* GA_Beaver) safeGame(e* Engine, c *GameConstants, players *[]Player) []int{
 	//fmt.Println("AM HERE")
+	//fmt.Println(e.OptimizerMode)
 	toReturn := []int{-1}
-	defer func() {
-		if r:= recover();r!=nil {
-			//fmt.Println("Recovering")
-			toReturn = []int{-1}
-		}
-	}()
+	//defer func() {
+	//	if r:= recover();r!=nil {
+	//		//fmt.Println("Recovering")
+	//		toReturn = []int{-1}
+	//	}
+	//}()
 	toReturn = e.runGame(*players,*c)
 	return toReturn
 }
@@ -90,6 +91,7 @@ func (g* GA_Beaver) tournament(inds [4]individual) int{
 			routeLengthScores:                   routeLengthScores,
 		}
 		e := Engine{}
+		e.OptimizerMode = true
 		players := make([]Player, 0)
 		player1 := BeaverPlayer{}
 		player1.setScoringParameters(inds[0])
@@ -105,9 +107,6 @@ func (g* GA_Beaver) tournament(inds [4]individual) int{
 		players = append(players, &player4)
 
 		winners := g.safeGame(&e,&constants,&players)
-		if e := recover();e != nil {
-
-		}
 		for _,winner := range winners {
 			scores[winner]++
 		}
