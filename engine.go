@@ -25,11 +25,15 @@ type Engine struct {
 	faceUpTrainCards []int    //the cards currently face up on the table, indexed by color
 
 	pileOfTrainCards         []GameColor         //the facedown stack of train cards
+	discardPileOfTrainCards  []GameColor
 	pileOfDestinationTickets []DestinationTicket //the facedown stack of destination tickets
 
 	gameConstants GameConstants
 
 	adjacencyList [][]int
+
+	OptimizerMode bool
+	falseMoveCount int
 }
 
 func (e *Engine) initializePileOfTrainCards(toExclude []int) {
@@ -56,22 +60,28 @@ func (e *Engine) initializePileOfTrainCards(toExclude []int) {
 
 func (e *Engine) drawTopTrainCard() GameColor {
 	if len(e.pileOfTrainCards) == 0 {
-		//let's figure out what we need to exclude
-
-		toExclude := make([]int, e.gameConstants.NumGameColors)
-		for j := 0; j < e.gameConstants.NumGameColors; j++ {
-			//first, exclude cards that are face up on the table
-			toExclude[j] += e.faceUpTrainCards[j]
-			for i := range e.playerList {
-				//exclude cards that are in players' hands
-				toExclude[j] += e.trainCardHands[i][j]
-			}
-		}
-
-		e.initializePileOfTrainCards(toExclude)
-		if len(e.pileOfTrainCards) == 0 {
+		////let's figure out what we need to exclude
+		//
+		//toExclude := make([]int, e.gameConstants.NumGameColors)
+		//for j := 0; j < e.gameConstants.NumGameColors; j++ {
+		//	//first, exclude cards that are face up on the table
+		//	toExclude[j] += e.faceUpTrainCards[j]
+		//	for i := range e.playerList {
+		//		//exclude cards that are in players' hands
+		//		toExclude[j] += e.trainCardHands[i][j]
+		//	}
+		//}
+		//
+		//e.initializePileOfTrainCards(toExclude)
+		if len(e.discardPileOfTrainCards) == 0 {
 			//	if it's still zero, then all cards are in players' hands, we cannot draw any more
 			panic("Not Enough Cards in The Deck")
+		} else {
+			e.pileOfTrainCards = e.discardPileOfTrainCards
+			e.discardPileOfTrainCards = nil
+			rand.Shuffle(len(e.pileOfTrainCards), func(i, j int) {
+				e.pileOfTrainCards[i],e.pileOfTrainCards[j]=e.pileOfTrainCards[j],e.pileOfTrainCards[i]
+			})
 		}
 	}
 
@@ -181,6 +191,8 @@ func (e *Engine) populateAdjacencyList() {
 func (e *Engine) initializeGame(playerList []Player, constants GameConstants) {
 
 	//TODO: some of these things refer to global variables, ideally we don't want that, everything can be a parameter
+	e.OptimizerMode = false
+	e.falseMoveCount = 0
 
 	e.playerList = playerList
 	e.activePlayer = 0
@@ -245,8 +257,16 @@ func (e *Engine) initializeGame(playerList []Player, constants GameConstants) {
 
 }
 
-func (e *Engine) runCollectionPhase() {
-	whichColor := e.playerList[e.activePlayer].askPickup(2, e.faceUpTrainCards)
+func (e *Engine) runCollectionPhase() bool {
+
+	if e.OptimizerMode {
+		//	want to avoid panics in optimizer mode, so we don't let the player draw if the pile is empty
+		if len(e.pileOfTrainCards) == 0 {
+			return false
+		}
+	}
+
+		whichColor := e.playerList[e.activePlayer].askPickup(2, e.faceUpTrainCards)
 	if whichColor != Other {
 		//	he wants a faceup card
 		if e.faceUpTrainCards[whichColor] <= 0 {
@@ -259,12 +279,20 @@ func (e *Engine) runCollectionPhase() {
 
 		if whichColor == Rainbow {
 			//	picking a rainbow color costs 2, so you're done
-			return
+			return true
 		}
 	} else {
 		//	asking for a random card from the deck
 		e.giveCardToPlayer(e.activePlayer, e.drawTopTrainCard(), true)
 	}
+
+	if e.OptimizerMode {
+		//	want to avoid panics in optimizer mode, so we don't let the player draw if the pile is empty
+		if len(e.pileOfTrainCards) == 0 {
+			return false
+		}
+	}
+
 
 	whichColor = e.playerList[e.activePlayer].askPickup(1, e.faceUpTrainCards)
 	if whichColor == Rainbow {
@@ -284,6 +312,7 @@ func (e *Engine) runCollectionPhase() {
 		//	asking for a random card from the deck
 		e.giveCardToPlayer(e.activePlayer, e.drawTopTrainCard(), true)
 	}
+	return true
 }
 
 func (e *Engine) logTrackLay(whichTrack int, whichColor GameColor, howManyColored, howManyRainbows int) {
@@ -339,6 +368,14 @@ func (e *Engine) runTrackLayingPhase() bool {
 	}
 	e.trainCardHands[e.activePlayer][whichColor] -= howManyColored
 	e.trainCardHands[e.activePlayer][Rainbow] -= howManyRainbows
+
+	for i:=0;i<howManyColored;i++ {
+		e.discardPileOfTrainCards = append(e.discardPileOfTrainCards, whichColor)
+	}
+
+	for i:=0;i<howManyRainbows;i++ {
+		e.discardPileOfTrainCards = append(e.discardPileOfTrainCards, Rainbow)
+	}
 
 	//remove the trains
 	e.numTrains[e.activePlayer] -= e.trackList[whichTrack].length
@@ -440,6 +477,7 @@ func (e *Engine) logPlayerDecision(whichMove int) {
 	}
 }
 
+
 func (e *Engine) runSingleTurn() bool {
 
 	e.logPlayerTurn()
@@ -456,17 +494,27 @@ func (e *Engine) runSingleTurn() bool {
 	//first, ask the guy whose turn it is what he wants to d
 	e.logPlayerDecision(whichMove)
 
+
 	if whichMove == 0 {
 		// let him pick up cards
-		e.runCollectionPhase()
+		if !e.runCollectionPhase(){
+			e.falseMoveCount++
+		}
 	} else if whichMove == 1 {
 		//ask them to put down some tracks
+		e.falseMoveCount=0
 		e.runTrackLayingPhase()
 	} else if whichMove == 2 {
 		//finally ask them to decide and pick some destination tokens
+		e.falseMoveCount=0
 		e.runDestinationTokenCollectionPhase(e.activePlayer, e.gameConstants.NumDestinationTicketsOffered, e.gameConstants.NumDestinationTicketsPicked)
 	} else {
 		panic("Invalid move choice")
+	}
+
+	if e.falseMoveCount == e.gameConstants.NumPlayers+1 {
+		//everybody keeps asking to pick up cards!
+		return true
 	}
 
 	//next player
