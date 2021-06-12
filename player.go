@@ -1,7 +1,7 @@
 package main
 
 type Player interface {
-	initialize(myNumber int, trackList []Track, constants GameConstants) //Tell the player what his number is and the total number of players, as well as the game settings
+	initialize(myNumber int, trackList []Track, adjList [][]int, constants GameConstants) //Tell the player what his number is and the total number of players, as well as the game settings
 
 	//players are stateful, so we may need to inform them of game events (in case they want to keep track of other players' hands or something)
 	informCardPickup(int, GameColor)   //inform this player that a player picked up a card of given color

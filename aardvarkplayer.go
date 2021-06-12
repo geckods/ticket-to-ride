@@ -63,7 +63,7 @@ func (a *AardvarkPlayer) populateAdjacencyList() {
 }
 
 
-func (a* AardvarkPlayer) initialize(myNumber int, trackList []Track, constants GameConstants) {
+func (a* AardvarkPlayer) initialize(myNumber int, trackList []Track,adjList [][]int, constants GameConstants) {
 	a.myNumber = myNumber
 	a.trackList = trackList
 	a.constants = constants
@@ -74,7 +74,7 @@ func (a* AardvarkPlayer) initialize(myNumber int, trackList []Track, constants G
 
 	a.lastChosentrack = -1
 
-	a.populateAdjacencyList()
+	a.adjacencyList = adjList
 }
 
 func (a *AardvarkPlayer) getOtherDestination(d Destination, t Track) Destination {

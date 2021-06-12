@@ -101,7 +101,7 @@ func (b *BeaverPlayer) setScoringParameters(inputs [] float64) {
 	b.constantForRepeat = scaleFloat(inputs[7], constantForRepeatMin, constantForRepeatMax)
 }
 
-func (b * BeaverPlayer) initialize(myNumber int, trackList []Track, constants GameConstants) {
+func (b * BeaverPlayer) initialize(myNumber int, trackList []Track,adjList [][]int, constants GameConstants) {
 	b.myNumber = myNumber
 	b.trackList = trackList
 	b.constants = constants
@@ -112,7 +112,7 @@ func (b * BeaverPlayer) initialize(myNumber int, trackList []Track, constants Ga
 
 	b.lastChosentrack = -1
 
-	b.populateAdjacencyList()
+	b.adjacencyList = adjList
 }
 
 func (b *BeaverPlayer) getOtherDestination(d Destination, t Track) Destination {
