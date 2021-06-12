@@ -9,8 +9,7 @@ import (
 	"sort"
 )
 
-const beaverIndividualSize = 8
-const numGamesInTournament = 50
+const beaverIndividualSize = 9
 const fileWriteFrequency = 1
 
 type individual []float64
@@ -25,6 +24,7 @@ type GA_Beaver struct {
 	crossoverRate,mutateRate float64
 	otherMutateRate, powerOfScore float64
 	elitismCount int
+	numGamesInTournament int
 
 	population []individual
 	popscores []scorestruct
@@ -43,10 +43,10 @@ func (g* GA_Beaver) mutate2(x *individual){
 	for i:=0;i<beaverIndividualSize;i++ {
 		if rand.Float64() < g.otherMutateRate {
 			if rand.Intn(2)==0 {
-				(*x)[i]*=1.01
+				(*x)[i]*=1.3
 				(*x)[i] = math.Min((*x)[i], 1.0)
 			} else {
-				(*x)[i]*=0.99
+				(*x)[i]*=0.7
 			}
 		}
 	}
@@ -76,7 +76,7 @@ func (g* GA_Beaver) fillInParameters(filename string) {
 	}
 	defer file.Close()
 
-	fmt.Fscanf(file, "%d\n%f\n%f\n%f\n%f\n%d", &g.populationSize, &g.crossoverRate, &g.mutateRate, &g.otherMutateRate, &g.powerOfScore, &g.elitismCount)
+	fmt.Fscanf(file, "%d\n%f\n%f\n%f\n%f\n%d\n%d", &g.populationSize, &g.crossoverRate, &g.mutateRate, &g.otherMutateRate, &g.powerOfScore, &g.elitismCount, &g.numGamesInTournament)
 }
 
 func (g* GA_Beaver) fillInPopulationScores(){
@@ -87,7 +87,7 @@ func (g* GA_Beaver) fillInPopulationScores(){
 
 	totSum := 0.0
 
-	for numIter:=0;numIter<numGamesInTournament;numIter++ {
+	for numIter:=0;numIter<g.numGamesInTournament;numIter++ {
 
 		channelArray := make([][]chan bool, g.populationSize)
 		for i:=0;i<g.populationSize;i++ {
@@ -209,7 +209,7 @@ func (g* GA_Beaver) twoWayTourney(a,b individual, ch chan bool){
 func (g* GA_Beaver) tournament(inds [4]individual) int{
 
 	scores := make([]int, 4)
-	for i:=0;i<numGamesInTournament;i++ {
+	for i:=0;i<g.numGamesInTournament;i++ {
 
 		constants := GameConstants{
 			NumColorCards:                       NUMCOLORCARDS,
@@ -293,8 +293,9 @@ func optimizeBeaverParametersWithGeneticAlgorithm() {
 	g.fillInParameters("gaparams.txt")
 
 	//TODO: seeding
-	g.population = append(g.population, individual{0.5,0.5,0.1,0.18,1,0.1,0.001,0.01})
-	g.population = append(g.population, individual{0.5,0.5,0.1,0.18,1,0.1,0.001,0.01})
+	g.population = append(g.population, individual{0.5,0.5,0.1,0.18,1,0.1,0.001,0.01,0.00})
+	g.population = append(g.population, individual{0.5,0.5,0.1,0.18,1,0.1,0.001,0.01,0.10})
+
 
 	for len(g.population) < g.populationSize {
 		g.population = append(g.population,g.randomIndividual())
@@ -306,7 +307,7 @@ func optimizeBeaverParametersWithGeneticAlgorithm() {
 		//fetch params
 		g.fillInParameters("gaparams.txt")
 		fmt.Println("ITER NO:", iterationNumber)
-		fmt.Println("PARAMS ARE:", g.populationSize, g.crossoverRate, g.mutateRate, g.otherMutateRate, g.powerOfScore, g.elitismCount)
+		fmt.Println("PARAMS ARE:", g.populationSize, g.crossoverRate, g.mutateRate, g.otherMutateRate, g.powerOfScore, g.elitismCount, g.numGamesInTournament)
 		fmt.Println("BEST MEMBER IS:", g.population[0])
 
 		//score each individual

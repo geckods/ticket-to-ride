@@ -36,10 +36,20 @@ func min(a, b int) int {
 	return b
 }
 
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 func normalizeFloatSlice(sl *[]float64){
 	sum := float64(0)
 	for _,elem := range *sl {
 		sum+=elem
+	}
+	if sum == 0.0 {
+		return
 	}
 	for i,_ := range *sl {
 		(*sl)[i]/=sum
