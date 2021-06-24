@@ -21,7 +21,7 @@ type ZebraBot struct {
 
 }
 
-func (b* ZebraBot) initialize(myNumber int, trackList []Track, constants GameConstants) {
+func (b* ZebraBot) initialize(myNumber int, trackList []Track, adjList [][]int, constants GameConstants) {
 	b.myNumber = myNumber
 	b.trackList = trackList
 	b.constants = constants
@@ -34,7 +34,8 @@ func (b* ZebraBot) initialize(myNumber int, trackList []Track, constants GameCon
 	for i:=0;i<constants.NumPlayers;i++{
 		b.cardsAnimalsWant[i]=make([]int, constants.NumGameColors)
 	}
-	b.populateAdjacencyList()
+	b.adjacencyList = adjList
+	//b.populateAdjacencyList()
 }
 
 func (b* ZebraBot) informStatus(trackStatus []int, faceUpCards []int) {
