@@ -1,6 +1,7 @@
 package main
 
 import (
+	//"fmt"
 	"math"
 	"math/rand"
 	"sort"
@@ -225,9 +226,21 @@ func (b *BeaverPlayer) getDTscore(dt DestinationTicket) []float64{
 	initialMultiplier := 1.0
 
 	for _,val := range uniqueValues {
+		//fmt.Println(val)
+		if val == MaxInt {
+			continue
+		}
 		for _,edge := range sumItems[val] {
 			//zap.S().Debug(val,edge)
+			//if val+1 == 0 {
+			//	panic("WTF")
+			//}
 			ans[edge]=initialMultiplier/ math.Pow(float64(val+1), b.pathDenominatorPower)
+			if math.IsNaN(ans[edge]) {
+				//fmt.Println(initialMultiplier, val,b.pathDenominatorPower, MaxInt)
+				panic("WTF")
+
+			}
 		}
 		initialMultiplier *= b.longerPathMultiplier
 	}
@@ -236,6 +249,7 @@ func (b *BeaverPlayer) getDTscore(dt DestinationTicket) []float64{
 	//zap.S().Debug(edgeDistanceSum)
 	//zap.S().Debug(ans)
 	//bufio.NewReader(os.Stdin).ReadBytes('\n')
+	//fmt.Println("In func", ans)
 
 	return ans
 }
@@ -298,6 +312,8 @@ func (b * BeaverPlayer) informStatus(trackStatus []int, faceUpCards []int) {
 		}
 	}
 
+
+	//fmt.Println("Point 0 dt", destinationTicketScores)
 	//normalize the three computed scores
 	normalizeFloatSlice(&destinationTicketScores)
 	normalizeFloatSlice(&trackLengthScores)
