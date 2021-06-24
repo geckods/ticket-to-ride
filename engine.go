@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"go.uber.org/zap"
 	"math/rand"
 	"os"
@@ -648,6 +649,7 @@ func (e *Engine) getLongestPathPlayers() []int {
 
 	for i := range e.playerList {
 		sc := e.determineLongestPathForPlayer(i)
+		//fmt.Println("Player", i, " Path Length ",sc)
 		if sc > currLongestPathLength {
 			currLongestPathLength = sc
 			longestPathers = nil
@@ -656,10 +658,14 @@ func (e *Engine) getLongestPathPlayers() []int {
 			longestPathers = append(longestPathers, i)
 		}
 	}
+
 	return longestPathers
 }
 
 func (e *Engine) logPlayerScore(i,sc int) {
+
+	fmt.Println("Player", i, "scored", sc)
+
 	if *toLog {
 		zap.L().Info("Engine: The score of player "+strconv.Itoa(i)+" is "+strconv.Itoa(sc),
 			zap.String("EVENT", "SCORE_COMPUTE"),
@@ -828,7 +834,7 @@ func (e *Engine) getGraphVizString() string {
 		graphString += " -- "
 		graphString += e.destinationNames[track.d2]
 		graphString += " [ len=" + strconv.Itoa(track.length) + ","
-		graphString += " label=" + strconv.Itoa(track.idx) + ","
+		graphString += " label=\"" + strconv.Itoa(track.idx) + " " + strconv.Itoa(track.length) + "\","
 		graphString += " fontsize= 20,"
 
 		if e.trackStatus[i] == -1 {
