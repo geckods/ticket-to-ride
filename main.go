@@ -16,29 +16,64 @@ import (
 var toLog *bool
 var consoleView *bool
 var toUseVisualizer *bool
+var toTrainGA *bool
+var statisticsMode *bool
 var toGenerateGraphs bool
 
 var server *socketio.Server //may be required globally
 
-func main() {
+func gatherStatistics() {
+	constants := GameConstants{
+		NumColorCards:                       NUMCOLORCARDS,
+		NumRainbowCards:                     NUMRAINBOWCARDS,
+		NumStartingTrains:                   NUMSTARTINGTRAINS,
+		NumFaceUpTrainCards:                 NUMFACEUPTRAINCARDS,
+		NumGameColors:                       NUMGAMECOLORS,
+		NumInitialTrainCardsDealt:           NUMINITIALTRAINCARDSDEALT,
+		NumInitialDestinationTicketsOffered: NUMINITIALDESTINATIONTICKETSOFFERED,
+		NumInitialDestinationTicketsPicked:  NUMINITIALDESTINATIONTICKETSPICKED,
+		NumDestinationTicketsOffered:        NUMDESTINATIONTICKETSOFFERED,
+		NumDestinationTicketsPicked:         NUMDESTINATIONTICKETSPICKED,
+		LongestPathScore:                    LONGESTPATHSCORE,
+		NumPlayers:                          0,
+		NumTracks:                           0,
+		NumDestinations:                     NUMDESTINATIONS,
+		routeLengthScores:                   routeLengthScores,
+	}
 
-	//seed random number generator
-	rand.Seed(time.Now().UTC().UnixNano())
 
-	//GA stuff
-	//toLog = new(bool)
-	//consoleView = new(bool)
-	//toUseVisualizer = new(bool)
-	//toGenerateGraphs = false
-	//optimizeBeaverParametersWithGeneticAlgorithm()
+	results := make(map[int]int)
 
+	for i:=0;i<1000;i++ {
+		fmt.Println(i)
 
-	//command line flags
-	toLog = flag.Bool("log", false, "Whether or not to log the operation of the engine. (default false)")
-	consoleView = flag.Bool("console", true, "Whether to log the operation to console or to file. (default true, to console)")
-	toUseVisualizer = flag.Bool("visualize", false, "Whether or not to send data on a socket for visualization")
-	flag.Parse()
+		e := Engine{}
+		e.OptimizerMode = true
+		players := make([]Player, 0)
+		player1 := ZebraBot{}
+		players = append(players, &player1)
+		player2 := AardvarkPlayer{}
+		//player2.setScoringParameters([]float64{0.44454935033352205 ,0.5 ,0.107653, 0.010350716892173813, 0.8450304277220828, 0.08914744929999999, 0.00013917876699999997, 0.2525800021749184, 1})
+		players = append(players, &player2)
+		player3 := ZebraBot{}
+		players = append(players, &player3)
+		player4 := AardvarkPlayer{}
+		//player4.setScoringParameters([]float64{0.44454935033352205 ,0.5 ,0.107653, 0.010350716892173813, 0.8450304277220828, 0.08914744929999999, 0.00013917876699999997, 0.2525800021749184, 1})
+		players = append(players, &player4)
 
+		winners := e.runGame(players, constants)
+
+		if len(winners)>1 {
+			results[-1]++
+		} else {
+			results[winners[0]]++
+		}
+	}
+
+	fmt.Println(results)
+}
+
+func singleGameMode() {
 	toGenerateGraphs = (*toLog && !(*consoleView))||(*toUseVisualizer)
 
 	//logging related code
@@ -95,8 +130,6 @@ func main() {
 			log.Fatal(http.ListenAndServe(":8000", nil))
 			wg.Done()
 		}()
-
-
 	}
 
 	constants := GameConstants{
@@ -128,26 +161,6 @@ func main() {
 	//{0.058900132870430624, 1, 0.2895221806445169, 0.11490330624049794, 0.6407834254916002, 5.715384909614501e-06, 8.444607045954392e-07, 0.43772764436279393}
 	//{0.10019273936205003 ,1 ,0.37929069417349554, 0.005788846196822391, 1 ,4.1375231334488105e-08, 1.9694065983164725e-07, 0.5796699999999999}
 
-	//These are for BeaverPlayer NEW, with sampling code
-	//This is equal to AardvardPlayer: {0.5, 0.5, 0.1, 0.18, 1, 0.1, 0.001, 0.01,0.1}
-	//{0.48179801353843693, 0.7, 0.14621819593735766 ,0.030177017178349315, 0.7362757503240934, 0.8041609718224826, 0.031657202511261404, 0.4788249209903217, 1} : This one seems pretty strong, it accumulates cards early and aggressively builds midgame, and focuses on long roads when it fails to connect its destinations. I think it's a strat that can be countered by a bunch of bots that spam roads early. Strongest strat I have ATM
-	//	{0.65, 0.5, 0.5613935345478703, 0.014786738417391164, 0.2636930125458408, 0.048999999999999995, 0.000637, 0.7, 0.7835672711986463} //this one also seems pretty high level
-	// {0.44454935033352205 ,0.5 ,0.107653, 0.010350716892173813, 0.8450304277220828, 0.08914744929999999, 0.00013917876699999997, 0.2525800021749184, 1} //this one is even stronger, and it starts early as well, doesn't hoard as long
-	e := Engine{}
-	players := make([]Player, 0)
-	player1 := BeaverPlayer{}
-	player1.setScoringParameters([]float64{0.44454935033352205 ,0.5 ,0.107653, 0.010350716892173813, 0.8450304277220828, 0.08914744929999999, 0.00013917876699999997, 0.2525800021749184, 1})
-	players = append(players, &player1)
-	player2 := BeaverPlayer{}
-	player2.setScoringParameters([]float64{0.65, 0.5, 0.5613935345478703, 0.014786738417391164, 0.2636930125458408, 0.048999999999999995, 0.000637, 0.7, 0.7835672711986463})
-	players = append(players, &player2)
-	player3 := AardvarkPlayer{}
-	//player3.setScoringParameters([]float64{0.65, 0.5, 0.5613935345478703, 0.014786738417391164, 0.2636930125458408, 0.048999999999999995, 0.000637, 0.7, 0.7835672711986463})
-	players = append(players, &player3)
-	player4 := AardvarkPlayer{}
-	//player4.setScoringParameters([]float64{0.65, 0.5, 0.5613935345478703, 0.014786738417391164, 0.2636930125458408, 0.048999999999999995, 0.000637, 0.7, 0.7835672711986463})
-	players = append(players, &player4)
-
 	if *toUseVisualizer {
 		zap.S().Infof("Waiting for visualizer to connect via socket.")
 		for numConnections == 0 {
@@ -155,7 +168,40 @@ func main() {
 		}
 	}
 
+
+	//These are for BeaverPlayer NEW, with sampling code
+	//This is equal to AardvardPlayer: {0.5, 0.5, 0.1, 0.18, 1, 0.1, 0.001, 0.01,0.1}
+	//{0.48179801353843693, 0.7, 0.14621819593735766 ,0.030177017178349315, 0.7362757503240934, 0.8041609718224826, 0.031657202511261404, 0.4788249209903217, 1} : This one seems pretty strong, it accumulates cards early and aggressively builds midgame, and focuses on long roads when it fails to connect its destinations. I think it's a strat that can be countered by a bunch of bots that spam roads early. Strongest strat I have ATM
+	//	{0.65, 0.5, 0.5613935345478703, 0.014786738417391164, 0.2636930125458408, 0.048999999999999995, 0.000637, 0.7, 0.7835672711986463} //this one also seems pretty high level
+	// {0.44454935033352205 ,0.5 ,0.107653, 0.010350716892173813, 0.8450304277220828, 0.08914744929999999, 0.00013917876699999997, 0.2525800021749184, 1} //this one is even stronger, and it starts early as well, doesn't hoard as long
+	// {0.17442904328297634 ,0.5915, 0.9348259641822315, 0.01922275994260851, 0.7675062831300927, 0.014214893109791652, 0.00028403829999999996, 0.4256978025995064, 1}
+	// {0.5259018814445566 ,0.6997445 ,0.06528327057446887 ,0.013455931959825957 ,0.4495446974003105, 0.009054886910937282, 0.00036924979, 0.29798846181965444, 1}
+
+	e := Engine{}
+	e.OptimizerMode = true
+	players := make([]Player, 0)
+	player1 := ZebraBot{}
+	players = append(players, &player1)
+	player2 := BeaverPlayer{}
+	player2.setScoringParameters([]float64{0.44454935033352205 ,0.5 ,0.107653, 0.010350716892173813, 0.8450304277220828, 0.08914744929999999, 0.00013917876699999997, 0.2525800021749184, 1})
+	players = append(players, &player2)
+	player3 := ZebraBot{}
+	players = append(players, &player3)
+	player4 := BeaverPlayer{}
+	player4.setScoringParameters([]float64{0.44454935033352205 ,0.5 ,0.107653, 0.010350716892173813, 0.8450304277220828, 0.08914744929999999, 0.00013917876699999997, 0.2525800021749184, 1})
+	players = append(players, &player4)
+
 	winners := e.runGame(players, constants)
+
+
+	//player2.setScoringParameters([]float64{0.44454935033352205 ,0.5 ,0.107653, 0.010350716892173813, 0.8450304277220828, 0.08914744929999999, 0.00013917876699999997, 0.2525800021749184, 1})
+	//player2.setScoringParameters([]float64{0.5259018814445566 ,0.6997445 ,0.06528327057446887 ,0.013455931959825957 ,0.4495446974003105, 0.009054886910937282, 0.00036924979, 0.29798846181965444, 1})
+	//player3 := ZebraBot{}
+	//////player3.setScoringParameters([]float64{0.65, 0.5, 0.5613935345478703, 0.014786738417391164, 0.2636930125458408, 0.048999999999999995, 0.000637, 0.7, 0.7835672711986463})
+	//players = append(players, &player3)
+	//player4 := BeaverPlayer{}
+	//player4.setScoringParameters([]float64{0.44454935033352205 ,0.5 ,0.107653, 0.010350716892173813, 0.8450304277220828, 0.08914744929999999, 0.00013917876699999997, 0.2525800021749184, 1})
+	//players = append(players, &player4)
 
 	for _,winner := range winners {
 		fmt.Println("The winner was", winner)
@@ -167,4 +213,35 @@ func main() {
 		}
 		wg.Wait()
 	}
+}
+
+
+func main() {
+
+	//seed random number generator
+	rand.Seed(time.Now().UTC().UnixNano())
+
+
+	//command line flags
+	toLog = flag.Bool("log", false, "Whether or not to log the operation of the engine. (default false)")
+	consoleView = flag.Bool("console", true, "Whether to log the operation to console or to file. (default true, to console)")
+	toUseVisualizer = flag.Bool("visualize", false, "Whether or not to send data on a socket for visualization")
+	toTrainGA = flag.Bool("trainGA", false, "Whether or not put the program in training GA mode. This will not log to console or visualize")
+	statisticsMode = flag.Bool("statisticsMode", false, "Whether to run 1000 games for statistics. This will not log to console or visualize")
+	flag.Parse()
+
+	if *toTrainGA {
+		//GA stuff
+		toLog = new(bool)
+		consoleView = new(bool)
+		toUseVisualizer = new(bool)
+		toGenerateGraphs = false
+		optimizeBeaverParametersWithGeneticAlgorithm()
+	} else if *statisticsMode {
+		gatherStatistics()
+	} else {
+		//	This is the normal mode: run a single game
+		singleGameMode()
+	}
+
 }
