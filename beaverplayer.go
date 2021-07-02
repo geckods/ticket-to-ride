@@ -1,6 +1,10 @@
 package main
 
 import (
+	"container/heap"
+	"strconv"
+
+	"github.com/wangjia184/sortedset"
 	//"fmt"
 	"math"
 	"math/rand"
@@ -193,6 +197,137 @@ func(b *BeaverPlayer) getEdgeDistancesFromTarget(d Destination, otherTarget Dest
 	return edgeDistances, true
 
 }
+
+func(b *BeaverPlayer) getEdgeDistancesFromTargetFast(d Destination, otherTarget Destination) ([]int, bool) {
+	//TODO: using n^2 djikstra, switch to n log n later
+
+	djikstraItemPointers := make([]*DjikstraItem, b.constants.NumDestinations)
+
+	pq := make(PriorityQueue, b.constants.NumDestinations)
+	for i:=0;i< b.constants.NumDestinations;i++ {
+		djikstraItemPointers[i]=new(DjikstraItem)
+		djikstraItemPointers[i].priority=MaxInt
+		djikstraItemPointers[i].vertexIndex=i
+		djikstraItemPointers[i].index=i
+		pq[i]=djikstraItemPointers[i]
+	}
+
+	heap.Init(&pq)
+
+	pq.update(djikstraItemPointers[d],int(d),0)
+	//zap.S().Debug(dist)
+
+	for numIter:=0;numIter< b.constants.NumDestinations;numIter++ {
+
+		currVertex := heap.Pop(&pq).(*DjikstraItem)
+		cheapestUnseen := currVertex.vertexIndex
+		cheapestVal := currVertex.priority
+
+		//zap.S().Debug(seen)
+		//zap.S().Debug(seen[33],destinationNames[33])
+		//zap.S().Debug(numIter,cheapestUnseen, cheapestVal, b.constants.NumDestinations)
+
+		for _,edge := range b.adjacencyList[cheapestUnseen] {
+			if b.trackStatus[edge] != -1 && b.trackStatus[edge] != b.myNumber {
+				continue
+			}
+			otherDest := b.getOtherDestination(Destination(cheapestUnseen), b.trackList[edge])
+			if b.trackStatus[edge]==-1 {
+				if cheapestVal+1 < djikstraItemPointers[otherDest].priority {
+					pq.update(djikstraItemPointers[otherDest], int(otherDest), cheapestVal+1)
+				}
+			} else if b.trackStatus[edge] == b.myNumber {
+				if cheapestVal < djikstraItemPointers[otherDest].priority {
+					pq.update(djikstraItemPointers[otherDest], int(otherDest), cheapestVal)
+				}
+			}
+		}
+	}
+
+	//zap.S().Debug(dist)
+
+	edgeDistances := make([]int, b.constants.NumTracks)
+
+	if djikstraItemPointers[otherTarget].priority == 0 {
+		//	we're already done with this destination ticket, return 0
+		return edgeDistances, false
+	}
+
+	for i,edge := range b.trackList {
+		edgeDistances[i]=min(djikstraItemPointers[edge.d1].priority, djikstraItemPointers[edge.d2].priority)
+	}
+
+	return edgeDistances, true
+}
+
+
+func(b *BeaverPlayer) getEdgeDistancesFromTargetFast2(d Destination, otherTarget Destination) ([]int, bool) {
+	//TODO: using n^2 djikstra, switch to n log n later
+	dist := make([]int, b.constants.NumDestinations)
+	for i:=0;i< b.constants.NumDestinations;i++ {
+		dist[i]=MaxInt
+	}
+	dist[d]=0
+
+	set := sortedset.New()
+
+	strings := make([]string, b.constants.NumDestinations)
+
+
+	for i:=0;i< b.constants.NumDestinations;i++ {
+		strings[i] = strconv.Itoa(i)
+		set.AddOrUpdate(strings[i],MaxInt, i)
+	}
+
+	set.AddOrUpdate(strings[int(d)],0, int(d))
+
+	for numIter:=0;numIter< b.constants.NumDestinations;numIter++ {
+
+		node:=set.PopMin()
+		cheapestUnseen := node.Value.(int)
+		cheapestVal := int(node.Score())
+
+		//zap.S().Debug(seen)
+		//zap.S().Debug(seen[33],destinationNames[33])
+		//zap.S().Debug(numIter,cheapestUnseen, cheapestVal, b.constants.NumDestinations)
+
+		for _,edge := range b.adjacencyList[cheapestUnseen] {
+			if b.trackStatus[edge] != -1 && b.trackStatus[edge] != b.myNumber {
+				continue
+			}
+			otherDest := b.getOtherDestination(Destination(cheapestUnseen), b.trackList[edge])
+			if b.trackStatus[edge]==-1 {
+				if cheapestVal+1 < dist[otherDest] {
+					dist[otherDest] = cheapestVal+1
+					set.AddOrUpdate(strings[int(otherDest)], sortedset.SCORE(cheapestVal+1), int(otherDest))
+				}
+			} else if b.trackStatus[edge] == b.myNumber {
+				if cheapestVal < dist[otherDest] {
+					dist[otherDest] = cheapestVal
+					set.AddOrUpdate(strings[int(otherDest)], sortedset.SCORE(cheapestVal), int(otherDest))
+				}
+			}
+		}
+	}
+
+	//zap.S().Debug(dist)
+
+	edgeDistances := make([]int, b.constants.NumTracks)
+
+	if dist[otherTarget] == 0 {
+		//	we're already done with this destination ticket, return 0
+		return edgeDistances, false
+	}
+
+	for i,edge := range b.trackList {
+		edgeDistances[i]=min(dist[edge.d1], dist[edge.d2])
+	}
+
+	return edgeDistances, true
+}
+
+
+
 
 func (b *BeaverPlayer) getDTscore(dt DestinationTicket) []float64{
 	edgeDistances1,ok := b.getEdgeDistancesFromTarget(dt.d1, dt.d2)
