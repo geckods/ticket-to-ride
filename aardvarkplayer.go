@@ -474,5 +474,7 @@ func (a* AardvarkPlayer) offerDestinationTickets(dtlist []DestinationTicket,howm
 //d: c, but also add multiplication parameters for each weight
 //e: d, but evolve 3 sets of parameters for the game: for early game, mid-game, and late-game (come up with some definition for early/mid/late game)
 //f: add in the ability to pick up destination cards probabilistically
+//Minimax
+//Monte Carlo Tree Search
 // at some point, I need to also add in modelling of opponent hands and opponent play
 //g: fully general neuroevolved self-play
